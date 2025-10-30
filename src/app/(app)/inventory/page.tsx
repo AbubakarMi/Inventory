@@ -11,12 +11,19 @@ import { Search } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function InventoryPage() {
+  const [searchTerm, setSearchTerm] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState('All');
   const allCategories = [{ id: 'all', name: 'All' }, ...categories];
 
-  const filteredItems = selectedCategory === 'All'
-    ? inventoryItems
-    : inventoryItems.filter(item => item.category === selectedCategory);
+  const filteredItems = React.useMemo(() => {
+    return inventoryItems
+      .filter(item => 
+        selectedCategory === 'All' || item.category === selectedCategory
+      )
+      .filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+  }, [searchTerm, selectedCategory]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -25,7 +32,13 @@ export default function InventoryPage() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search items..." className="pl-8 w-full sm:w-[240px] lg:w-[300px]" />
+            <Input 
+              type="search" 
+              placeholder="Search items..." 
+              className="pl-8 w-full sm:w-[240px] lg:w-[300px]" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[180px]">
