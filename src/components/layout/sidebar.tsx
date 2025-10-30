@@ -11,6 +11,7 @@ import {
   BarChart,
   Users,
   Settings,
+  Truck,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/inventory", icon: Package, label: "Inventory" },
   { href: "/categories", icon: FolderKanban, label: "Categories" },
   { href: "/sales", icon: ShoppingCart, label: "Sales / Usage" },
+  { href: "/suppliers", icon: Truck, label: "Suppliers" },
   { href: "/reports", icon: BarChart, label: "Reports" },
   { href: "/users", icon: Users, label: "Users" },
 ];

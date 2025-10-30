@@ -1,3 +1,4 @@
+
 export type InventoryItem = {
     id: string;
     name: string;
@@ -56,4 +57,12 @@ export type PieChartData = {
     name: string;
     value: number;
     fill: string;
+};
+
+export type Supplier = {
+    id: string;
+    name: string;
+    contact: string;
+    products: string[];
+    rating: number;
 };

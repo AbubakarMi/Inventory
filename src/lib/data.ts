@@ -1,4 +1,5 @@
-import type { InventoryItem, Category, Sale, User, Notification, ChartData, PieChartData } from '@/lib/types';
+
+import type { InventoryItem, Category, Sale, User, Notification, ChartData, PieChartData, Supplier } from '@/lib/types';
 
 export const inventoryItems: InventoryItem[] = [
   { id: '1', name: 'Organic Apples', category: 'Fruits', quantity: 150, unit: 'kg', status: 'In Stock', cost: 1.2, price: 2.5, expiry: '2024-12-01', supplier: 'Green Farms', threshold: 20 },
@@ -63,4 +64,14 @@ export const topSellingItems = [
     { name: 'Cow Milk', quantity: 1200, profit: 840 },
     { name: 'Free-range Eggs', quantity: 2500, profit: 750 },
     { name: 'Carrots', quantity: 400, profit: 280 },
+];
+
+export const suppliers: Supplier[] = [
+    { id: '1', name: 'Green Farms', contact: 'contact@greenfarms.com', products: ['Organic Apples', 'Carrots'], rating: 5 },
+    { id: '2', name: 'Valley Veggies', contact: 'sales@valleyveggies.com', products: ['Carrots'], rating: 4 },
+    { id: '3', name: 'Feed Co.', contact: 'orders@feedco.com', products: ['Chicken Feed'], rating: 4 },
+    { id: '4', name: 'Happy Cow Dairy', contact: 'info@happydairy.com', products: ['Cow Milk'], rating: 5 },
+    { id: '5', name: 'Garden Essentials', contact: 'support@gardenessentials.com', products: ['Organic Fertilizer'], rating: 3 },
+    { id: '6', name: 'Farm Kitchen', contact: 'kitchen@farm.com', products: ['Strawberry Jam'], rating: 4 },
+    { id: '7', name: 'Happy Hens', contact: 'eggs@happyhens.com', products: ['Free-range Eggs'], rating: 5 },
 ];
