@@ -128,7 +128,7 @@ export function TransactionModal({ children }: TransactionModalProps) {
                 </div>
             </div>
             <DialogFooter>
-            <Button type="submit" variant="accent">Submit</Button>
+            <Button type="submit">Submit</Button>
             </DialogFooter>
         </form>
       </DialogContent>
