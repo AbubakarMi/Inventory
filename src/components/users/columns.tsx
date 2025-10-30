@@ -13,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { UserModal } from "./user-modal"
 import { UserDetailsModal } from "./user-details-modal"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
 
@@ -63,12 +62,12 @@ export const columns: ColumnDef<User>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <UserDetailsModal user={user}>
                  <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                     View
                 </button>
             </UserDetailsModal>
-            <DropdownMenuSeparator />
             <ActionConfirmationDialog
               title="Are you sure?"
               description={`This will suspend ${user.name}'s account. They will not be able to log in.`}

@@ -31,7 +31,7 @@ export function UserDetailsModal({ children, user }: UserDetailsModalProps) {
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{user.name}</DialogTitle>
                     <DialogDescription>
