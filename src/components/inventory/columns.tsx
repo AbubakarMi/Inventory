@@ -8,6 +8,10 @@ import { Button } from "../ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
+import { useFirestore, useCollection } from "@/firebase"
+import { deleteDocument } from "@/firebase/firestore/mutations"
+import { collection } from "firebase/firestore"
+import type { Category } from "@/lib/types"
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -15,6 +19,12 @@ export type ColumnDef<TData> = {
   accessorKey: keyof TData | string
   header: string
   cell: (props: { row: { original: TData } }) => React.ReactNode
+}
+
+const getStatus = (item: InventoryItem) => {
+    if (item.quantity <= 0) return "Out of Stock";
+    if (item.quantity <= item.threshold) return "Low Stock";
+    return "In Stock";
 }
 
 export const columns: ColumnDef<InventoryItem>[] = [
@@ -37,13 +47,14 @@ export const columns: ColumnDef<InventoryItem>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
+      const status = getStatus(row.original);
       const variant =
-        row.original.status === "In Stock"
+        status === "In Stock"
           ? "success"
-          : row.original.status === "Low Stock"
+          : status === "Low Stock"
           ? "warning"
           : "destructive"
-      return <Badge variant={variant}>{row.original.status}</Badge>
+      return <Badge variant={variant}>{status}</Badge>
     },
   },
   {
@@ -51,6 +62,14 @@ export const columns: ColumnDef<InventoryItem>[] = [
     header: "Actions",
     cell: ({ row }) => {
         const item = row.original;
+        const firestore = useFirestore();
+        const { data: categories } = useCollection<Category>(firestore ? collection(firestore, 'categories') : null);
+
+        const handleDelete = () => {
+          if (!firestore) return;
+          deleteDocument(firestore, 'inventory', item.id);
+        }
+
       return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -61,7 +80,7 @@ export const columns: ColumnDef<InventoryItem>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <ItemModal itemToEdit={item}>
+                <ItemModal itemToEdit={item} categories={categories || []}>
                     <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         Edit
                     </button>
@@ -69,7 +88,7 @@ export const columns: ColumnDef<InventoryItem>[] = [
                 <ActionConfirmationDialog
                   title="Are you absolutely sure?"
                   description={`This action cannot be undone. This will permanently delete "${item.name}".`}
-                  onConfirm={() => console.log(`Deleting ${item.name}`)}
+                  onConfirm={handleDelete}
                   variant="destructive"
                 >
                   <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">

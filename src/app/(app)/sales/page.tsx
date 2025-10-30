@@ -1,14 +1,31 @@
 
+'use client'
+
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { sales } from "@/lib/data";
 import { DataTable } from "@/components/data-table";
 import { columns } from "@/components/sales/columns";
 import { TransactionModal } from "@/components/sales/transaction-modal";
+import { useCollection, useFirestore } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
+import type { Sale } from "@/lib/types";
 
 export default function SalesPage() {
-    const salesData = sales.filter(s => s.type === 'Sale');
-    const usageData = sales.filter(s => s.type === 'Usage');
+    const firestore = useFirestore();
+
+    const { data: salesData, loading: salesLoading } = useCollection<Sale>(
+        firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Sale')) : null
+    );
+
+    const { data: usageData, loading: usageLoading } = useCollection<Sale>(
+        firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Usage')) : null
+    );
+
+    const isLoading = salesLoading || usageLoading;
+
+    if (isLoading) {
+        return <div>Loading...</div>
+    }
 
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -24,10 +41,10 @@ export default function SalesPage() {
                     <TabsTrigger value="usage">Usage</TabsTrigger>
                 </TabsList>
                 <TabsContent value="sales">
-                    <DataTable columns={columns} data={salesData} />
+                    <DataTable columns={columns} data={salesData || []} />
                 </TabsContent>
                 <TabsContent value="usage">
-                    <DataTable columns={columns} data={usageData} />
+                    <DataTable columns={columns} data={usageData || []} />
                 </TabsContent>
             </Tabs>
         </div>

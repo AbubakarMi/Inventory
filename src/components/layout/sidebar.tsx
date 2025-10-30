@@ -27,6 +27,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useUser } from "@/firebase";
 
 
 const allNavItems = [
@@ -43,14 +44,8 @@ const allNavItems = [
 export default function AppSidebar() {
   const pathname = usePathname();
   const { isMobile, state } = useSidebar();
-  const [userRole, setUserRole] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    // On component mount, get the role from localStorage.
-    // This will only run on the client-side.
-    const role = localStorage.getItem("userRole");
-    setUserRole(role || "Staff"); // Default to 'Staff' if no role is found
-  }, []);
+  const { user, claims } = useUser();
+  const userRole = claims?.role;
 
   const navItems = React.useMemo(() => {
     if (!userRole) return [];

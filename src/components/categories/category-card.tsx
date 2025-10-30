@@ -1,20 +1,30 @@
 
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
 import { MoreVertical, FolderKanban, Package, Sigma } from "lucide-react";
-import type { EnrichedCategory } from "@/lib/types";
+import type { EnrichedCategory, Category } from "@/lib/types";
 import { CategoryModal } from "./category-modal";
 import { Separator } from "../ui/separator";
 import { ActionConfirmationDialog } from "../action-confirmation-dialog";
+import { deleteDocument } from "@/firebase/firestore/mutations";
+import { useFirestore } from "@/firebase";
 
 type CategoryCardProps = {
     category: EnrichedCategory;
+    allCategories: Category[];
 }
 
-export function CategoryCard({ category }: CategoryCardProps) {
+export function CategoryCard({ category, allCategories }: CategoryCardProps) {
+    const firestore = useFirestore();
+
+    const handleDelete = () => {
+        if (!firestore) return;
+        deleteDocument(firestore, 'categories', category.id);
+    }
+    
     return (
         <Card className="hover:shadow-md transition-shadow flex flex-col">
             <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -34,13 +44,13 @@ export function CategoryCard({ category }: CategoryCardProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                         <CategoryModal categoryToEdit={category}>
+                         <CategoryModal categoryToEdit={category} categories={allCategories}>
                              <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground">Edit</button>
                         </CategoryModal>
                         <ActionConfirmationDialog
                             title="Are you absolutely sure?"
                             description={`This will delete the "${category.name}" category. This action cannot be undone.`}
-                            onConfirm={() => console.log(`Deleting ${category.name}`)}
+                            onConfirm={handleDelete}
                             variant="destructive"
                         >
                             <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">

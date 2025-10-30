@@ -6,29 +6,25 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { signInWithEmailAndPassword } from "firebase/auth"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tractor } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/firebase"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 })
 
-const roleEmails: Record<string, string> = {
-    "admin@gmail.com": "Admin",
-    "manager@gmail.com": "Manager",
-    "storekeeper@gmail.com": "Storekeeper",
-    "staff@gmail.com": "Staff",
-}
-
 export default function LoginPage() {
   const router = useRouter()
+  const auth = useAuth()
+  const { toast } = useToast()
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -37,21 +33,39 @@ export default function LoginPage() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof loginSchema>) {
-    const role = roleEmails[values.email.toLowerCase()];
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
+    if (!auth) {
+      toast({
+        variant: "destructive",
+        title: "Auth not initialized",
+        description: "Firebase auth is not available. Please try again later.",
+      })
+      return
+    }
 
-    if (role) {
-      localStorage.setItem('userRole', role);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+      
+      const idTokenResult = await user.getIdTokenResult();
+      const role = idTokenResult.claims.role;
+
       toast({
         title: "Login Successful",
-        description: `Welcome, ${role}!`,
+        description: `Welcome, ${role || 'User'}!`,
       });
+
       router.push("/dashboard")
-    } else {
-       toast({
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      let description = "An unexpected error occurred. Please try again.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = "Invalid credentials. Please check your email and password.";
+      }
+      toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "Invalid credentials. Please try again.",
+        description: description,
       });
     }
   }
@@ -104,8 +118,8 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Logging in..." : "Login"}
               </Button>
             </form>
           </Form>

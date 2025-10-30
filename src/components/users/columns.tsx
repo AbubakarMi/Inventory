@@ -8,14 +8,15 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserDetailsModal } from "./user-details-modal"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
-import { UserModal } from "./user-modal"
+import { useFirestore } from "@/firebase"
+import { updateDocument } from "@/firebase/firestore/mutations"
+import { useToast } from "@/hooks/use-toast"
 
 export type ColumnDef<TData> = {
   accessorKey: keyof TData | string
@@ -53,6 +54,19 @@ export const columns: ColumnDef<User>[] = [
     header: "Actions",
     cell: ({ row }) => {
       const user = row.original;
+      const firestore = useFirestore();
+      const { toast } = useToast();
+
+      const handleStatusChange = async (status: 'Active' | 'Suspended' | 'Inactive') => {
+        if (!firestore) return;
+        try {
+          await updateDocument(firestore, 'users', user.id, { status });
+          toast({ title: "Success", description: `User status changed to ${status}.`})
+        } catch (error) {
+          toast({ variant: 'destructive', title: "Error", description: "Failed to update user status."})
+        }
+      }
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -71,21 +85,21 @@ export const columns: ColumnDef<User>[] = [
             </UserDetailsModal>
             <ActionConfirmationDialog
               title="Are you sure?"
-              description={`This will suspend ${user.name}'s account. They will not be able to log in.`}
-              onConfirm={() => console.log(`Suspending ${user.name}`)}
+              description={`This will change ${user.name}'s status to 'Suspended'.`}
+              onConfirm={() => handleStatusChange('Suspended')}
             >
-              <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-orange-600 focus:text-orange-600 focus:bg-orange-100 dark:focus:bg-orange-900/50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+              <button disabled={user.status === 'Suspended'} className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-orange-600 focus:text-orange-600 focus:bg-orange-100 dark:focus:bg-orange-900/50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                 Suspend
               </button>
             </ActionConfirmationDialog>
             <ActionConfirmationDialog
-              title="Are you absolutely sure?"
-              description={`This action cannot be undone. This will permanently delete ${user.name}'s account and remove their data from our servers.`}
-              onConfirm={() => console.log(`Deleting ${user.name}`)}
+              title="Are you sure?"
+              description={`This will change ${user.name}'s status to 'Inactive'.`}
+              onConfirm={() => handleStatusChange('Inactive')}
               variant="destructive"
             >
-              <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                  Delete
+              <button disabled={user.status === 'Inactive'} className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                  Deactivate
               </button>
             </ActionConfirmationDialog>
           </DropdownMenuContent>

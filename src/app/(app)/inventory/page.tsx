@@ -1,31 +1,61 @@
 
-
-"use client"
+'use client'
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { inventoryItems, categories } from "@/lib/data"
 import { DataTable } from "@/components/data-table"
 import { columns } from "@/components/inventory/columns"
 import { ItemModal } from "@/components/inventory/item-modal"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useCollection, useFirestore } from "@/firebase"
+import { collection, query, where } from "firebase/firestore"
+import { useSearchParams } from "next/navigation"
+import type { InventoryItem, Category } from "@/lib/types"
 
 export default function InventoryPage() {
+  const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams.get('status');
+
   const [searchTerm, setSearchTerm] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState('All');
-  const allCategories = [{ id: 'all', name: 'All' }, ...categories];
+  
+  const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(
+    firestore ? collection(firestore, 'inventory') : null
+  );
+  
+  const { data: categories, loading: categoriesLoading } = useCollection<Category>(
+    firestore ? collection(firestore, 'categories') : null
+  );
+
+  const allCategories = React.useMemo(() => {
+    return [{ id: 'all', name: 'All', parent: null }, ...(categories || [])];
+  }, [categories]);
 
   const filteredItems = React.useMemo(() => {
+    if (!inventoryItems) return [];
     return inventoryItems
       .filter(item => 
         selectedCategory === 'All' || item.category === selectedCategory
       )
       .filter(item => 
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-  }, [searchTerm, selectedCategory]);
+      ).filter(item => {
+        if (!statusFilter) return true;
+        if (statusFilter === 'low') {
+            return item.quantity <= item.threshold;
+        }
+        return true;
+      });
+  }, [searchTerm, selectedCategory, inventoryItems, statusFilter]);
+
+  const isLoading = itemsLoading || categoriesLoading;
+  
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -52,7 +82,7 @@ export default function InventoryPage() {
               ))}
             </SelectContent>
           </Select>
-          <ItemModal>
+          <ItemModal categories={categories || []}>
             <Button className="whitespace-nowrap w-full sm:w-auto">Add Item</Button>
           </ItemModal>
         </div>

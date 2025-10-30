@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { TransactionModal } from "./transaction-modal"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
+import { useFirestore } from "@/firebase"
+import { deleteDocument } from "@/firebase/firestore/mutations"
 
 
 export type ColumnDef<TData> = {
@@ -56,6 +57,12 @@ export const columns: ColumnDef<Sale>[] = [
     header: "Actions",
     cell: ({ row }) => {
         const transaction = row.original;
+        const firestore = useFirestore();
+
+        const handleDelete = () => {
+          if (!firestore) return;
+          deleteDocument(firestore, 'sales', transaction.id);
+        }
       return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -74,7 +81,7 @@ export const columns: ColumnDef<Sale>[] = [
                 <ActionConfirmationDialog
                   title="Are you absolutely sure?"
                   description={`This action cannot be undone. This will permanently delete this transaction record.`}
-                  onConfirm={() => console.log(`Deleting ${transaction.id}`)}
+                  onConfirm={handleDelete}
                   variant="destructive"
                 >
                   <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">

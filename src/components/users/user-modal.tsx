@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
 import type { User } from "@/lib/types"
+import { useFirestore } from "@/firebase";
+import { addDocument } from "@/firebase/firestore/mutations";
 
 type UserModalProps = {
   children: React.ReactNode;
@@ -38,6 +40,8 @@ const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   role: z.string().min(1, "Role is required"),
+  // Note: Password handling should be done via a secure backend function in a real app
+  // For this prototype, we'll just log it.
   password: z.string().min(8, "Password must be at least 8 characters long").optional().or(z.literal('')),
   confirmPassword: z.string().optional(),
 }).refine(data => {
@@ -53,18 +57,20 @@ const userSchema = z.object({
 
 export function UserModal({ children, userToEdit }: UserModalProps) {
     const { toast } = useToast();
+    const firestore = useFirestore();
     const [isOpen, setIsOpen] = React.useState(false);
 
-    const title = userToEdit ? "Edit User" : "Add New User";
-    const description = userToEdit ? "Update the user's details." : "Enter the user's details to grant them access.";
+    // This modal should only be for adding users. Editing users is more complex.
+    const title = "Add New User";
+    const description = "Enter the user's details to grant them access.";
 
 
     const form = useForm<z.infer<typeof userSchema>>({
         resolver: zodResolver(userSchema),
-        defaultValues: userToEdit || {
+        defaultValues: {
             name: "",
             email: "",
-            role: "",
+            role: "Staff",
             password: "",
             confirmPassword: "",
         },
@@ -72,23 +78,31 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
 
     React.useEffect(() => {
         if(isOpen) {
-            form.reset(userToEdit || {
-                name: "",
-                email: "",
-                role: "",
-                password: "",
-                confirmPassword: "",
-            });
+            form.reset();
         }
-    }, [userToEdit, form, isOpen]);
+    }, [form, isOpen]);
 
-    function onSubmit(values: z.infer<typeof userSchema>) {
-        console.log(values);
-        toast({
-            title: "Success!",
-            description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
-        });
-        setIsOpen(false);
+    async function onSubmit(values: z.infer<typeof userSchema>) {
+        if (!firestore) return;
+        // In a real app, you would use a Cloud Function to create the user in Firebase Auth
+        // and set their custom claims. Here we just add to Firestore.
+        const userData: Omit<User, 'id'> = {
+          name: values.name,
+          email: values.email,
+          role: values.role as User['role'],
+          status: 'Active'
+        }
+        
+        try {
+          await addDocument(firestore, 'users', userData);
+          toast({
+              title: "Success!",
+              description: `User "${values.name}" has been created. They need to be assigned a password.`,
+          });
+          setIsOpen(false);
+        } catch (error) {
+          toast({ variant: 'destructive', title: "Error", description: "Failed to create user."})
+        }
     }
 
 
@@ -148,6 +162,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                                     <SelectItem value="Admin">Admin</SelectItem>
                                     <SelectItem value="Manager">Manager</SelectItem>
                                     <SelectItem value="Staff">Staff</SelectItem>
+                                    <SelectItem value="Storekeeper">Storekeeper</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />

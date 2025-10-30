@@ -6,35 +6,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { dailyTrendsData, sales, inventoryItems } from "@/lib/data"
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts"
-
-const chartConfig = {
-  value: { 
-    label: "Sales",
-    color: "hsl(var(--primary))",
-  },
-}
+import { useCollection, useFirestore } from "@/firebase";
+import { collection, query } from "firebase/firestore";
+import type { Sale, InventoryItem } from "@/lib/types";
 
 export default function ReportsPage() {
+    const firestore = useFirestore();
+
+    const { data: sales, loading: salesLoading } = useCollection<Sale>(
+        firestore ? query(collection(firestore, 'sales')) : null
+    );
+
+    const { data: inventoryItems, loading: inventoryLoading } = useCollection<InventoryItem>(
+        firestore ? query(collection(firestore, 'inventory')) : null
+    );
+
+    if (salesLoading || inventoryLoading) {
+        return <div>Loading reports...</div>;
+    }
 
     const totalRevenue = sales
-        .filter(sale => sale.type === 'Sale')
-        .reduce((sum, sale) => sum + sale.total, 0);
+        ?.filter(sale => sale.type === 'Sale')
+        .reduce((sum, sale) => sum + sale.total, 0) || 0;
 
     const costOfGoodsSold = sales
-        .filter(sale => sale.type === 'Sale')
+        ?.filter(sale => sale.type === 'Sale')
         .reduce((sum, sale) => {
-            const item = inventoryItems.find(i => i.name === sale.itemName);
+            const item = inventoryItems?.find(i => i.name === sale.itemName);
             return sum + (item ? item.cost * sale.quantity : 0);
-        }, 0);
+        }, 0) || 0;
 
     const netProfit = totalRevenue - costOfGoodsSold;
-    
-    // For the chart, we'll continue using the mock daily trends data as an example,
-    // since the sales data doesn't have enough daily granularity for a trend chart.
-    const salesChartData = dailyTrendsData;
 
 
     return (
@@ -54,7 +56,7 @@ export default function ReportsPage() {
                 </div>
             </div>
 
-            <div className="grid gap-4 md:gap-8">
+            <div className="grid gap-4 md:grid-cols-2 md:gap-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>Profit/Loss Summary</CardTitle>
@@ -75,35 +77,6 @@ export default function ReportsPage() {
                         </div>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Sales Trend</CardTitle>
-                        <CardDescription>A summary of sales within the selected date range.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart 
-                                data={salesChartData}
-                                margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-                                >
-                                    <defs>
-                                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                                    </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value}`} />
-                                    <ChartTooltip cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 2, strokeDasharray: "3 3" }} content={<ChartTooltipContent />} />
-                                    <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
                 
                 <Card>
                     <CardHeader>
@@ -121,14 +94,18 @@ export default function ReportsPage() {
                                 </TableRow>
                             </TableHeader>
                              <TableBody>
-                                {inventoryItems.map(item => (
+                                {inventoryItems?.map(item => (
                                      <TableRow key={item.id}>
                                         <TableCell>{item.name}</TableCell>
                                         <TableCell>{item.category}</TableCell>
                                         <TableCell className="text-right">{item.quantity} {item.unit}</TableCell>
                                         <TableCell className="text-right">₦{(item.quantity * item.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                     </TableRow>
-                                ))}
+                                )) || (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">No inventory items.</TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>

@@ -8,8 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { notifications } from "@/lib/data"
+import type { Notification } from "@/lib/types"
 import { cn } from "@/lib/utils"
+
+// TODO: Replace with real data from Firestore
+const notifications: Notification[] = [];
+
 
 export function NotificationsDropdown() {
   return (

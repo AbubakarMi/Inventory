@@ -19,8 +19,11 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
+import { useUser } from "@/firebase"
 
 export default function SettingsPage() {
+  const { user } = useUser();
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
         <h1 className="font-semibold text-lg md:text-2xl">Settings</h1>
@@ -41,11 +44,11 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
-                    <Input id="name" defaultValue="Alice Johnson" />
+                    <Input id="name" defaultValue={user?.displayName || ''} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue="alice@farm.com" />
+                    <Input id="email" type="email" defaultValue={user?.email || ''} readOnly />
                 </div>
             </CardContent>
             <CardFooter>

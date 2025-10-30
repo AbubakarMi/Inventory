@@ -26,6 +26,9 @@ export function RecentSales({ sales }: { sales: Sale[] }) {
           <div className="ml-auto font-medium">+₦{sale.total.toFixed(2)}</div>
         </div>
         ))}
+        {sales.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center">No recent sales.</p>
+        )}
       </CardContent>
     </Card>
   )

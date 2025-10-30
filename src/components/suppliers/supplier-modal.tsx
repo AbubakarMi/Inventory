@@ -28,7 +28,9 @@ import {
 } from "@/components/ui/form"
 import type { Supplier } from "@/lib/types"
 import { Slider } from "../ui/slider";
-import { useSubmit } from "@/hooks/use-submit";
+import { useFirestore } from "@/firebase";
+import { addDocument, updateDocument } from "@/firebase/firestore/mutations";
+import { useToast } from "@/hooks/use-toast";
 
 type SupplierModalProps = {
   children: React.ReactNode;
@@ -44,6 +46,10 @@ const supplierSchema = z.object({
 
 
 export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = React.useState(false);
+
     const defaultValues = supplierToEdit ? { ...supplierToEdit, products: supplierToEdit.products.join(', ') } : {
         name: "",
         contact: "",
@@ -56,12 +62,22 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
         defaultValues,
     });
     
-    const { isOpen, setIsOpen, handleSubmit } = useSubmit({
-        form,
-        formatValues: (values) => ({ ...values, products: values.products.split(',').map(p => p.trim()).filter(Boolean) }),
-        entity: 'Supplier',
-        id: supplierToEdit?.id
-    });
+    async function handleSubmit(values: z.infer<typeof supplierSchema>) {
+        if(!firestore) return;
+        const formattedValues = { ...values, products: values.products.split(',').map(p => p.trim()).filter(Boolean) };
+        try {
+            if (supplierToEdit) {
+                await updateDocument(firestore, 'suppliers', supplierToEdit.id, formattedValues);
+                toast({ title: "Success!", description: "Supplier updated." });
+            } else {
+                await addDocument(firestore, 'suppliers', formattedValues);
+                toast({ title: "Success!", description: "Supplier added." });
+            }
+            setIsOpen(false);
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Error", description: "Something went wrong." });
+        }
+    };
 
     React.useEffect(() => {
         if(isOpen) {

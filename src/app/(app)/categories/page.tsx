@@ -1,32 +1,54 @@
 
+'use client'
+
 import { Button } from "@/components/ui/button";
-import { categories, inventoryItems } from "@/lib/data";
 import { CategoryCard } from "@/components/categories/category-card";
 import { CategoryModal } from "@/components/categories/category-modal";
 import { PlusCircle, FolderKanban } from "lucide-react";
-import type { EnrichedCategory } from "@/lib/types";
+import type { EnrichedCategory, InventoryItem, Category } from "@/lib/types";
+import { useCollection, useFirestore } from "@/firebase";
+import { collection } from "firebase/firestore";
+import { useMemo } from "react";
 
 
 export default function CategoriesPage() {
-    const enrichedCategories: EnrichedCategory[] = categories.map(category => {
-        const itemsInCategory = inventoryItems.filter(item => item.category === category.name);
-        const totalStock = itemsInCategory.reduce((sum, item) => sum + item.quantity, 0);
-        const itemCount = itemsInCategory.length;
-        
-        return {
-            ...category,
-            itemCount,
-            totalStock,
-            // Assuming unit is consistent for a category for simplicity, or just show count
-            unit: itemsInCategory.length > 0 ? itemsInCategory[0].unit : ''
-        };
-    });
+    const firestore = useFirestore();
+
+    const { data: categories, loading: categoriesLoading } = useCollection<Category>(
+        firestore ? collection(firestore, 'categories') : null
+    );
+
+    const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(
+        firestore ? collection(firestore, 'inventory') : null
+    );
+
+    const enrichedCategories: EnrichedCategory[] = useMemo(() => {
+        if (!categories || !inventoryItems) return [];
+        return categories.map(category => {
+            const itemsInCategory = inventoryItems.filter(item => item.category === category.name);
+            const totalStock = itemsInCategory.reduce((sum, item) => sum + item.quantity, 0);
+            const itemCount = itemsInCategory.length;
+            
+            return {
+                ...category,
+                itemCount,
+                totalStock,
+                unit: itemsInCategory.length > 0 ? itemsInCategory[0].unit : ''
+            };
+        });
+    }, [categories, inventoryItems]);
+
+    const isLoading = categoriesLoading || itemsLoading;
+
+    if (isLoading) {
+        return <div>Loading...</div>
+    }
 
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
             <div className="flex items-center justify-between">
                 <h1 className="font-semibold text-lg md:text-2xl">Categories</h1>
-                <CategoryModal>
+                <CategoryModal categories={categories || []}>
                     <Button className="flex items-center gap-2">
                         <PlusCircle className="h-4 w-4" />
                         Add Category
@@ -36,7 +58,7 @@ export default function CategoriesPage() {
             {enrichedCategories.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {enrichedCategories.map(category => (
-                        <CategoryCard key={category.id} category={category} />
+                        <CategoryCard key={category.id} category={category} allCategories={categories || []} />
                     ))}
                 </div>
             ) : (
@@ -49,7 +71,7 @@ export default function CategoriesPage() {
                         <p className="text-sm text-muted-foreground mb-4">
                             Get started by creating your first category.
                         </p>
-                        <CategoryModal>
+                        <CategoryModal categories={categories || []}>
                             <Button>
                                 <PlusCircle className="h-4 w-4 mr-2" />
                                 Add Category

@@ -3,38 +3,58 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, Users, FileText, PlusCircle, PenSquare } from "lucide-react"
+import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, Users, FileText, PlusCircle, PenSquare, PartyPopper } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
-import { inventoryItems, topSellingItems, sales, users } from "@/lib/data"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
 import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdown-chart"
 import { RecentSales } from "@/components/dashboard/recent-sales"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { useCollection, useFirestore, useUser } from "@/firebase"
+import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore"
+import type { InventoryItem, Sale, User, Category } from "@/lib/types"
+import { ItemModal } from "@/components/inventory/item-modal"
+import { TransactionModal } from "@/components/sales/transaction-modal"
 
 export default function DashboardPage() {
-  const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
   const [isWelcomeAlertVisible, setIsWelcomeAlertVisible] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
 
-  useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    setUserRole(role);
-  }, []);
+  const { user, claims } = useUser();
+  const firestore = useFirestore();
+  
+  const { data: inventoryItems, loading: inventoryLoading } = useCollection<InventoryItem>(
+    firestore ? collection(firestore, 'inventory') : null
+  );
+  
+  const { data: sales, loading: salesLoading } = useCollection<Sale>(
+    firestore ? query(collection(firestore, 'sales'), orderBy('date', 'desc'), limit(5)) : null
+  );
 
-  const totalItems = inventoryItems.reduce((sum, item) => sum + item.quantity, 0)
-  const lowStockItems = inventoryItems.filter(item => item.status === 'Low Stock').length
-  const inventoryValue = inventoryItems.reduce((sum, item) => sum + item.cost * item.quantity, 0)
-  const totalSales = 2856.50 // static value
-  const totalUsers = users.length;
+  const { data: users, loading: usersLoading } = useCollection<User>(
+    firestore ? collection(firestore, 'users') : null
+  );
 
+  const { data: categories, loading: categoriesLoading } = useCollection<Category>(
+    firestore ? collection(firestore, 'categories') : null
+  );
+
+  const lowStockItems = inventoryItems?.filter(item => item.quantity <= item.threshold).length || 0;
+  const totalItems = inventoryItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  const inventoryValue = inventoryItems?.reduce((sum, item) => sum + item.cost * item.quantity, 0) || 0;
+  
+  const totalSales = sales?.reduce((sum, sale) => sum + sale.total, 0) || 0;
+  const totalUsers = users?.length || 0;
+  
+  const userRole = claims?.role;
   const isAdmin = userRole === 'Admin';
   const isManager = userRole === 'Manager';
 
+
   const statCards = [
-    { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Across all items" },
-    { title: "Low Stock Items", value: lowStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory?status=low", description: "Items below threshold" },
+    { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager"], link: "/inventory", description: "Across all items" },
+    { title: "Low Stock Items", value: lowStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper"], link: "/inventory?status=low", description: "Items below threshold" },
     { title: "Total Sales", value: `₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"], link: "/sales", description: "This month" },
     { title: "Total Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Sum of all quantities" },
     { title: "Total Users", value: totalUsers, icon: <Users />, roles: ["Admin"], link: "/users", description: "System-wide users" }
@@ -42,7 +62,7 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
+    <div className="flex flex-1 flex-col gap-4 overflow-hidden md:gap-8">
       <div className="flex items-center justify-between">
           <h1 className="font-semibold text-lg md:text-2xl">Dashboard</h1>
       </div>
@@ -51,7 +71,7 @@ export default function DashboardPage() {
         <Alert className="relative bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800">
           <PartyPopper className="h-4 w-4 text-green-600 dark:text-green-400" />
           <div className="ml-3">
-            <AlertTitle className="font-semibold text-green-800 dark:text-green-200">Welcome back!</AlertTitle>
+            <AlertTitle className="font-semibold text-green-800 dark:text-green-200">Welcome back, {user?.displayName || 'User'}!</AlertTitle>
             <AlertDescription className="text-green-700 dark:text-green-300">
               You have successfully logged in. Here's your farm's overview.
             </AlertDescription>
@@ -93,8 +113,8 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 grid gap-4">
-          <RecentSales sales={sales.slice(0, 5)} />
-          { (isAdmin || isManager) && <TopProductsTable items={topSellingItems} /> }
+          <RecentSales sales={sales || []} />
+          { (isAdmin || isManager) && <TopProductsTable items={inventoryItems || []} /> }
         </div>
          <div className="lg:col-span-1 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
           <Card>
@@ -102,16 +122,16 @@ export default function DashboardPage() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-2">
-              <Link href="/inventory" passHref>
+              <ItemModal categories={categories || []}>
                 <Button variant="outline" className="w-full">
                   <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                 </Button>
-              </Link>
-              <Link href="/sales" passHref>
+              </ItemModal>
+              <TransactionModal>
                 <Button variant="outline" className="w-full">
                   <PenSquare className="mr-2 h-4 w-4" /> Record Sale
                 </Button>
-              </Link>
+              </TransactionModal>
               { (isAdmin || isManager) && (
                 <Link href="/reports" passHref>
                   <Button variant="outline" className="w-full">
@@ -129,7 +149,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <CategoryBreakdownChart />
+          <CategoryBreakdownChart items={inventoryItems || []} />
           
         </div>
       </div>

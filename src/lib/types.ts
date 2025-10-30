@@ -1,15 +1,16 @@
 
 
+export type WithId<T> = T & { id: string };
+
 export type InventoryItem = {
     id: string;
     name: string;
     category: string;
     quantity: number;
     unit: string;
-    status: 'In Stock' | 'Low Stock' | 'Out of Stock';
     cost: number;
     price: number;
-    expiry: string;
+    expiry: string | null;
     supplier: string;
     threshold: number;
 };
@@ -33,6 +34,7 @@ export type Sale = {
     type: 'Sale' | 'Usage';
     date: string;
     total: number;
+    customer?: string;
 };
 
 export type User = {
