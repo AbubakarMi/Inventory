@@ -32,6 +32,15 @@ export default function DashboardPage() {
   const isAdmin = userRole === 'Admin';
   const isManager = userRole === 'Manager';
 
+  const statCards = [
+    { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager", "Storekeeper", "Staff"] },
+    { title: "Low Stock Items", value: lowStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"] },
+    { title: "Total Sales", value: `₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"] },
+    { title: "Total Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"] },
+    { title: "Total Users", value: totalUsers, icon: <Users />, roles: ["Admin"] }
+  ].filter(card => userRole && card.roles.includes(userRole));
+
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center justify-between">
@@ -76,12 +85,10 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <StatCard title="Total Inventory Value" value={`₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<Package />} />
-        <StatCard title="Low Stock Items" value={lowStockItems} icon={<AlertTriangle />} />
-        { (isAdmin || isManager) && <StatCard title="Total Sales" value={`₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<ShoppingCart />} /> }
-        { isAdmin && <StatCard title="Total Users" value={totalUsers} icon={<Users />} /> }
-        <StatCard title="Total Items in Stock" value={totalItems.toLocaleString()} icon={<BarChart />} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map(card => (
+          <StatCard key={card.title} title={card.title} value={card.value} icon={card.icon} />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
