@@ -70,7 +70,6 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
         },
     });
 
-    // Reset form when userToEdit changes or dialog opens
     React.useEffect(() => {
         if(isOpen) {
             form.reset(userToEdit || {

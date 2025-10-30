@@ -1,5 +1,7 @@
+
 "use client"
 
+import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -9,12 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { categories } from "@/lib/data"
 import { Category } from "@/lib/types"
+import { useToast } from "@/hooks/use-toast"
 
 type CategoryModalProps = {
   children: React.ReactNode;
@@ -22,11 +26,23 @@ type CategoryModalProps = {
 }
 
 export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) {
+  const { toast } = useToast()
+  const [isOpen, setIsOpen] = React.useState(false);
+
   const title = categoryToEdit ? "Edit Category" : "Add New Category";
   const description = categoryToEdit ? "Update the details of the category." : "Fill in the details to add a new category.";
 
+  const handleSubmit = () => {
+    // In a real app, you'd get the form values here
+    toast({
+      title: "Success!",
+      description: `Category has been ${categoryToEdit ? 'updated' : 'added'}.`
+    });
+    setIsOpen(false);
+  }
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -61,7 +77,10 @@ export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) 
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit">Save changes</Button>
+           <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+            </DialogClose>
+          <Button type="submit" onClick={handleSubmit}>Save changes</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,7 @@
+
 "use client"
 
+import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,7 +14,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { categories } from "@/lib/data"
 import type { InventoryItem } from "@/lib/types"
@@ -50,6 +51,7 @@ const itemSchema = z.object({
 
 export function ItemModal({ children, itemToEdit }: ItemModalProps) {
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = React.useState(false);
   const title = itemToEdit ? "Edit Item" : "Add New Item";
   const description = itemToEdit ? "Update the details of your inventory item." : "Fill in the details to add a new item to your inventory.";
 
@@ -70,6 +72,25 @@ export function ItemModal({ children, itemToEdit }: ItemModalProps) {
       threshold: 10,
     },
   })
+  
+  React.useEffect(() => {
+    if (isOpen) {
+      form.reset(itemToEdit ? {
+        ...itemToEdit,
+        expiry: itemToEdit.expiry ? new Date(itemToEdit.expiry).toISOString().split('T')[0] : '',
+      } : {
+        name: "",
+        category: "",
+        quantity: 0,
+        unit: "",
+        cost: 0,
+        price: 0,
+        expiry: "",
+        supplier: "",
+        threshold: 10,
+      });
+    }
+  }, [isOpen, itemToEdit, form]);
 
   function onSubmit(values: z.infer<typeof itemSchema>) {
     console.log(values);
@@ -77,13 +98,12 @@ export function ItemModal({ children, itemToEdit }: ItemModalProps) {
       title: `Success!`,
       description: `Item "${values.name}" has been ${itemToEdit ? 'updated' : 'added'}.`,
     })
-    // Here you would typically close the dialog.
-    // This requires controlling the open state of the Dialog.
+    setIsOpen(false);
   }
 
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -231,7 +251,7 @@ export function ItemModal({ children, itemToEdit }: ItemModalProps) {
             />
             <DialogFooter>
                 <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
+                    <Button variant="outline" type="button">Cancel</Button>
                 </DialogClose>
                 <Button type="submit">Save changes</Button>
             </DialogFooter>
