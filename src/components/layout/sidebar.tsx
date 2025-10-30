@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -13,7 +14,6 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -50,16 +50,16 @@ export default function AppSidebar() {
         <SidebarMenu>
             {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                    <Link href={item.href} legacyBehavior passHref>
-                        <SidebarMenuButton
-                            as="a"
-                            isActive={pathname.startsWith(item.href)}
-                            tooltip={item.label}
-                        >
+                    <SidebarMenuButton
+                        asChild
+                        isActive={pathname.startsWith(item.href)}
+                        tooltip={item.label}
+                    >
+                        <Link href={item.href}>
                             <item.icon />
                             <span>{item.label}</span>
-                        </SidebarMenuButton>
-                    </Link>
+                        </Link>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
             ))}
         </SidebarMenu>
@@ -67,12 +67,12 @@ export default function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
             <SidebarMenuItem>
-                <Link href="/settings" legacyBehavior passHref>
-                    <SidebarMenuButton as="a" isActive={pathname.startsWith('/settings')} tooltip="Settings">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip="Settings">
+                    <Link href="/settings">
                         <Settings />
                         <span>Settings</span>
-                    </SidebarMenuButton>
-                </Link>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
