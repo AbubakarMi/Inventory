@@ -43,6 +43,7 @@ export const columns: ColumnDef<User>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
+      const user = row.original;
       const variant = user.status === "Active" ? "success" : user.status === "Suspended" ? "warning" : "destructive";
       return <Badge variant={variant}>{row.original.status}</Badge>
     },
