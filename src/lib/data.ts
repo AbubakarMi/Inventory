@@ -1,4 +1,5 @@
 
+
 import type { InventoryItem, Category, Sale, User, Notification, ChartData, PieChartData, Supplier } from '@/lib/types';
 
 export const inventoryItems: InventoryItem[] = [
@@ -21,18 +22,18 @@ export const categories: Category[] = [
 ];
 
 export const sales: Sale[] = [
-  { id: '1', itemName: 'Organic Apples', quantity: 20, type: 'Sale', date: '2024-07-20', total: 50.00 },
-  { id: '2', itemName: 'Carrots', quantity: 15, type: 'Sale', date: '2024-07-20', total: 22.50 },
-  { id: '3', itemName: 'Chicken Feed', quantity: 2, type: 'Usage', date: '2024-07-19', total: 70.00 },
-  { id: '4', itemName: 'Cow Milk', quantity: 50, type: 'Sale', date: '2024-07-19', total: 60.00 },
-  { id: '5', itemName: 'Free-range Eggs', quantity: 100, type: 'Sale', date: '2024-07-18', total: 50.00 },
+  { id: '1', itemName: 'Organic Apples', quantity: 20, type: 'Sale', date: '2024-07-20', total: 50.00, avatarUrl: 'https://picsum.photos/seed/1/40/40' },
+  { id: '2', itemName: 'Carrots', quantity: 15, type: 'Sale', date: '2024-07-20', total: 22.50, avatarUrl: 'https://picsum.photos/seed/2/40/40' },
+  { id: '3', itemName: 'Chicken Feed', quantity: 2, type: 'Usage', date: '2024-07-19', total: 70.00, avatarUrl: 'https://picsum.photos/seed/3/40/40' },
+  { id: '4', itemName: 'Cow Milk', quantity: 50, type: 'Sale', date: '2024-07-19', total: 60.00, avatarUrl: 'https://picsum.photos/seed/4/40/40' },
+  { id: '5', itemName: 'Free-range Eggs', quantity: 100, type: 'Sale', date: '2024-07-18', total: 50.00, avatarUrl: 'https://picsum.photos/seed/5/40/40' },
 ];
 
 export const users: User[] = [
-  { id: '1', name: 'Alice Johnson', role: 'Admin', email: 'alice@farm.com', status: 'Active' },
-  { id: '2', name: 'Bob Williams', role: 'Manager', email: 'bob@farm.com', status: 'Active' },
-  { id: '3', name: 'Charlie Brown', role: 'Staff', email: 'charlie@farm.com', status: 'Inactive' },
-  { id: '4', name: 'David Smith', role: 'Staff', email: 'david@farm.com', status: 'Suspended' },
+  { id: '1', name: 'Alice Johnson', role: 'Admin', email: 'admin@gmail.com', status: 'Active' },
+  { id: '2', name: 'Bob Williams', role: 'Manager', email: 'manager@gmail.com', status: 'Active' },
+  { id: '3', name: 'Charlie Brown', role: 'Staff', email: 'staff@gmail.com', status: 'Inactive' },
+  { id: '4', name: 'David Smith', role: 'Storekeeper', email: 'storekeeper@gmail.com', status: 'Suspended' },
 ];
 
 export const notifications: Notification[] = [

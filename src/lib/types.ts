@@ -1,4 +1,5 @@
 
+
 export type InventoryItem = {
     id: string;
     name: string;
@@ -32,12 +33,13 @@ export type Sale = {
     type: 'Sale' | 'Usage';
     date: string;
     total: number;
+    avatarUrl?: string;
 };
 
 export type User = {
     id: string;
     name: string;
-    role: 'Admin' | 'Manager' | 'Staff';
+    role: 'Admin' | 'Manager' | 'Staff' | 'Storekeeper';
     email: string;
     status: 'Active' | 'Inactive' | 'Suspended';
 };
