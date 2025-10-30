@@ -1,7 +1,9 @@
+
 "use client"
 
 import Image from "next/image"
 import Link from "next/link"
+import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -53,7 +55,10 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-            <Link href="/login">Log out</Link>
+            <Link href="/login" className="flex items-center">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+            </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
