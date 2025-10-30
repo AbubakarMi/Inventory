@@ -6,12 +6,12 @@ import {
   Tractor,
   LayoutDashboard,
   Package,
-  FolderKanban,
   ShoppingCart,
+  Settings,
+  FolderKanban,
+  Truck,
   BarChart,
   Users,
-  Settings,
-  Truck,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -26,15 +26,22 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
-const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/inventory", icon: Package, label: "Inventory" },
-  { href: "/categories", icon: FolderKanban, label: "Categories" },
-  { href: "/sales", icon: ShoppingCart, label: "Sales / Usage" },
-  { href: "/suppliers", icon: Truck, label: "Suppliers" },
-  { href: "/reports", icon: BarChart, label: "Reports" },
-  { href: "/users", icon: Users, label: "Users" },
+// Simulating a "Staff" role by filtering nav items.
+// In a real app, this would come from user authentication.
+const userRole = "Staff"; 
+
+const allNavItems = [
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["Admin", "Manager", "Staff"] },
+  { href: "/inventory", icon: Package, label: "Inventory", roles: ["Admin", "Manager", "Staff"] },
+  { href: "/categories", icon: FolderKanban, label: "Categories", roles: ["Admin", "Manager"] },
+  { href: "/sales", icon: ShoppingCart, label: "Sales / Usage", roles: ["Admin", "Manager", "Staff"] },
+  { href: "/suppliers", icon: Truck, label: "Suppliers", roles: ["Admin", "Manager"] },
+  { href: "/reports", icon: BarChart, label: "Reports", roles: ["Admin", "Manager"] },
+  { href: "/users", icon: Users, label: "Users", roles: ["Admin"] },
 ];
+
+const navItems = allNavItems.filter(item => item.roles.includes(userRole));
+
 
 export default function AppSidebar() {
   const pathname = usePathname();

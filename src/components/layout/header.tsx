@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LogOut } from "lucide-react"
+import { LogOut, Users, FolderKanban, BarChart, Truck } from "lucide-react"
 
 import {
   Breadcrumb,
