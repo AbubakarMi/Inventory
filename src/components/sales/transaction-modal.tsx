@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -29,27 +30,37 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import type { Sale } from "@/lib/types"
 
 type TransactionModalProps = {
   children: React.ReactNode;
+  transactionToEdit?: Sale;
 }
 
 const transactionSchema = z.object({
-  type: z.enum(["sale", "usage"], { required_error: "You must select a transaction type." }),
+  type: z.enum(["Sale", "Usage"], { required_error: "You must select a transaction type." }),
   category: z.string().min(1, "Please select a category."),
   item: z.string().min(1, "Please select an item."),
   quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
   customer: z.string().optional(),
 })
 
-export function TransactionModal({ children }: TransactionModalProps) {
+export function TransactionModal({ children, transactionToEdit }: TransactionModalProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
 
+  const defaultCategory = transactionToEdit ? inventoryItems.find(i => i.name === transactionToEdit.itemName)?.category : "";
+
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: {
-      type: "sale",
+    defaultValues: transactionToEdit ? {
+        type: transactionToEdit.type,
+        category: defaultCategory,
+        item: transactionToEdit.itemName,
+        quantity: transactionToEdit.quantity,
+        customer: "" // customer data not available in Sale type
+    } : {
+      type: "Sale",
       category: "",
       item: "",
       quantity: 1,
@@ -66,19 +77,45 @@ export function TransactionModal({ children }: TransactionModalProps) {
 
   // Reset item when category changes
   React.useEffect(() => {
-    form.setValue("item", "");
-  }, [selectedCategory, form]);
+      if (!transactionToEdit || selectedCategory !== defaultCategory) {
+        form.setValue("item", "");
+    }
+  }, [selectedCategory, form, transactionToEdit, defaultCategory]);
+
+  React.useEffect(() => {
+    if (transactionToEdit) {
+        const defaultCat = inventoryItems.find(i => i.name === transactionToEdit.itemName)?.category
+        form.reset({
+             type: transactionToEdit.type,
+            category: defaultCat,
+            item: transactionToEdit.itemName,
+            quantity: transactionToEdit.quantity,
+            customer: ""
+        })
+    } else {
+        form.reset({
+            type: "Sale",
+            category: "",
+            item: "",
+            quantity: 1,
+            customer: "",
+        })
+    }
+  }, [transactionToEdit, form, isOpen])
 
 
   function onSubmit(values: z.infer<typeof transactionSchema>) {
     console.log(values);
     toast({
         title: "Success!",
-        description: "Transaction has been recorded successfully.",
+        description: `Transaction has been ${transactionToEdit ? 'updated' : 'recorded'} successfully.`,
     });
     setIsOpen(false);
     form.reset();
   }
+
+  const title = transactionToEdit ? "Edit Transaction" : "Record Transaction";
+  const description = transactionToEdit ? "Update the details of this transaction." : "Select an item and enter the details of the transaction.";
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -87,9 +124,9 @@ export function TransactionModal({ children }: TransactionModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Record Transaction</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Select an item and enter the details of the transaction.
+            {description}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -108,13 +145,13 @@ export function TransactionModal({ children }: TransactionModalProps) {
                     >
                       <FormItem className="flex items-center space-x-2">
                         <FormControl>
-                          <RadioGroupItem value="sale" id="r1" />
+                          <RadioGroupItem value="Sale" id="r1" />
                         </FormControl>
                         <FormLabel htmlFor="r1" className="font-normal">Sale</FormLabel>
                       </FormItem>
                       <FormItem className="flex items-center space-x-2">
                         <FormControl>
-                          <RadioGroupItem value="usage" id="r2" />
+                          <RadioGroupItem value="Usage" id="r2" />
                         </FormControl>
                         <FormLabel htmlFor="r2" className="font-normal">Usage</FormLabel>
                       </FormItem>
@@ -130,7 +167,7 @@ export function TransactionModal({ children }: TransactionModalProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
