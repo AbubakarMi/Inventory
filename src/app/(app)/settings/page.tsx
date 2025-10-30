@@ -25,7 +25,7 @@ export default function SettingsPage() {
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
         <h1 className="font-semibold text-lg md:text-2xl">Settings</h1>
         <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 max-w-lg">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="password">Password</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>

@@ -1,17 +1,17 @@
+
 "use client"
 
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { PanelLeft, Search } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   Tooltip,
   TooltipContent,
@@ -189,7 +189,7 @@ const Sidebar = React.forwardRef<
         ref={ref}
         data-state={state}
         className={cn(
-          "hidden md:flex flex-col h-full bg-sidebar text-sidebar-foreground border-r transition-all duration-200",
+          "hidden h-full flex-col border-r bg-sidebar text-sidebar-foreground transition-all duration-200 md:flex",
           open ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
           className
         )}
@@ -206,7 +206,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar, isMobile, open, state } = useSidebar()
+  const { toggleSidebar, isMobile, state } = useSidebar()
 
   return (
     <Button
@@ -232,57 +232,15 @@ const SidebarTrigger = React.forwardRef<
 })
 SidebarTrigger.displayName = "SidebarTrigger"
 
-const SidebarInset = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"main">
->(({ className, ...props }, ref) => {
-  return (
-    <main
-      ref={ref}
-      className={cn(
-        "flex-1",
-        className
-      )}
-      {...props}
-    />
-  )
-})
-SidebarInset.displayName = "SidebarInset"
-
-const SidebarInput = React.forwardRef<
-  React.ElementRef<typeof Input>,
-  React.ComponentProps<typeof Input>
->(({ className, ...props }, ref) => {
-  const { state } = useSidebar()
-  return (
-    <div className={cn("relative p-2", state === 'collapsed' ? 'p-1' : 'p-2' )}>
-      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <Input
-        ref={ref}
-        className={cn(
-          "h-8 w-full bg-sidebar-accent shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring pl-8",
-          state === "collapsed" && "hidden",
-          className
-        )}
-        {...props}
-      />
-      <Button variant="ghost" size="icon" className={cn("h-8 w-8", state === "expanded" && "hidden")}>
-          <Search className="h-4 w-4" />
-      </Button>
-    </div>
-  )
-})
-SidebarInput.displayName = "SidebarInput"
-
 const SidebarHeader = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
-  const { state } = useSidebar();
+  const { state, isMobile } = useSidebar();
   return (
     <div
       ref={ref}
-      className={cn("flex items-center justify-between p-2", state === 'collapsed' && "justify-center", className)}
+      className={cn("flex items-center justify-between p-2", (state === 'collapsed' && !isMobile) && "justify-center", className)}
       {...props}
     />
   )
@@ -296,26 +254,12 @@ const SidebarFooter = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col gap-2 p-2 mt-auto", className)}
+      className={cn("mt-auto flex flex-col gap-2 p-2", className)}
       {...props}
     />
   )
 })
 SidebarFooter.displayName = "SidebarFooter"
-
-const SidebarSeparator = React.forwardRef<
-  React.ElementRef<typeof Separator>,
-  React.ComponentProps<typeof Separator>
->(({ className, ...props }, ref) => {
-  return (
-    <Separator
-      ref={ref}
-      className={cn("mx-2 w-auto bg-sidebar-border", className)}
-      {...props}
-    />
-  )
-})
-SidebarSeparator.displayName = "SidebarSeparator"
 
 const SidebarContent = React.forwardRef<
   HTMLDivElement,
@@ -377,8 +321,6 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
-import { Search } from "lucide-react"
-
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button"> & {
@@ -403,21 +345,9 @@ const SidebarMenuButton = React.forwardRef<
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
 
-    const buttonContent = (
-        <Comp
-        ref={ref}
-        data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), state === 'collapsed' ? 'justify-center w-10' : '', className)}
-        {...props}
-      >
-        {children}
-        {state === 'collapsed' && <span className="sr-only">{tooltip}</span>}
-      </Comp>
-    )
-
     const childs = React.Children.map(children, (child) => {
         if (React.isValidElement(child) && child.type === 'span') {
-            if (state === 'collapsed') return null;
+            if (state === 'collapsed' && !isMobile) return null;
         }
         return child;
     });
@@ -426,13 +356,12 @@ const SidebarMenuButton = React.forwardRef<
       <Comp
         ref={ref}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), state === 'collapsed' ? 'justify-center w-10' : '', className)}
+        className={cn(sidebarMenuButtonVariants({ variant, size }), (state === 'collapsed' && !isMobile) ? 'justify-center w-10' : '', className)}
         {...props}
       >
         {childs}
       </Comp>
     )
-
 
     if (!tooltip) {
       return button
@@ -464,13 +393,10 @@ export {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarInput,
-  SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 }

@@ -25,6 +25,7 @@ import {
   SidebarMenuButton,
   SidebarTrigger,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 
@@ -41,6 +42,7 @@ const allNavItems = [
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const { isMobile, state } = useSidebar();
   const [userRole, setUserRole] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -61,9 +63,9 @@ export default function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2">
             <Tractor className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">FarmSight</span>
+            { (state === 'expanded' || isMobile) && <span className="font-semibold text-lg">FarmSight</span> }
         </div>
-        <SidebarTrigger />
+        {!isMobile && <SidebarTrigger />}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>

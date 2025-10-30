@@ -14,7 +14,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { NotificationsDropdown } from "@/components/layout/notifications-dropdown"
-import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "../ui/button"
 
 
@@ -29,10 +29,11 @@ function getBreadcrumb(path: string) {
 
 export default function Header() {
   const pathname = usePathname()
+  const { isMobile } = useSidebar();
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
-      <SidebarTrigger className="sm:hidden" />
+       {isMobile && <SidebarTrigger className="sm:hidden" />}
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
