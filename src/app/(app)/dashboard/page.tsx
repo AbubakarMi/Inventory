@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { AlertCircle, PlusCircle, X } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
 import StatCard from "@/components/dashboard/stat-card"
 import { inventoryItems, topSellingItems } from "@/lib/data"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
 import { DashboardCharts } from "@/components/dashboard/charts"
+import { ItemModal } from "@/components/inventory/item-modal"
+import { Button } from "@/components/ui/button"
 
 export default function DashboardPage() {
   const [isAlertVisible, setIsAlertVisible] = useState(true);
@@ -21,10 +22,12 @@ export default function DashboardPage() {
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex items-center justify-between">
           <h1 className="font-semibold text-lg md:text-2xl">Dashboard</h1>
-          <Button className="flex items-center gap-2">
-            <PlusCircle className="h-4 w-4" />
-            Add Item
-          </Button>
+          <ItemModal>
+            <Button className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Add Item
+            </Button>
+          </ItemModal>
       </div>
 
       {isAlertVisible && lowStockItems > 0 && (
