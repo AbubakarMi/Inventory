@@ -4,13 +4,11 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft, Search } from "lucide-react"
+import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   Tooltip,
@@ -171,7 +169,7 @@ const Sidebar = React.forwardRef<
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent
             side={side}
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground"
+            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground sm:w-[--sidebar-width]"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -189,7 +187,7 @@ const Sidebar = React.forwardRef<
         ref={ref}
         data-state={state}
         className={cn(
-          "hidden h-full flex-col border-r bg-sidebar text-sidebar-foreground transition-all duration-200 md:flex",
+          "hidden h-full flex-col border-r bg-sidebar text-sidebar-foreground transition-all duration-200 sm:flex",
           open ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
           className
         )}
@@ -215,7 +213,7 @@ const SidebarTrigger = React.forwardRef<
       size="icon"
       className={cn(
         "h-8 w-8",
-        !isMobile && "hidden group-data-[collapsible=icon]/sidebar-wrapper:flex",
+        isMobile ? "" : "hidden group-data-[collapsible=icon]/sidebar-wrapper:flex",
         isMobile ? "" : state === 'expanded' ? "self-end" : "self-center",
         className
       )}
@@ -379,7 +377,7 @@ const SidebarMenuButton = React.forwardRef<
         <TooltipContent
           side="right"
           align="center"
-          hidden={state !== "collapsed" || isMobile}
+          hidden={(state !== "collapsed" && !isMobile)}
           {...tooltip}
         />
       </Tooltip>

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, PlusCircle, PenSquare, FileText, Users } from "lucide-react"
+import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, Users, FileText, PlusCircle, PenSquare } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
 import { inventoryItems, topSellingItems, sales, users } from "@/lib/data"
@@ -85,7 +85,7 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         {statCards.map(card => (
           <StatCard key={card.title} title={card.title} value={card.value} icon={card.icon} description={card.description} linkHref={card.link} />
         ))}

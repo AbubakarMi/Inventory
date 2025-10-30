@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -29,8 +30,8 @@ export default function InventoryPage() {
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="font-semibold text-lg md:text-2xl">Inventory</h1>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:flex-initial">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
               type="search" 
@@ -51,7 +52,7 @@ export default function InventoryPage() {
             </SelectContent>
           </Select>
           <ItemModal>
-            <Button className="whitespace-nowrap">Add Item</Button>
+            <Button className="whitespace-nowrap w-full sm:w-auto">Add Item</Button>
           </ItemModal>
         </div>
       </div>
