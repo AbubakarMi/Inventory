@@ -33,7 +33,6 @@ export type Sale = {
     type: 'Sale' | 'Usage';
     date: string;
     total: number;
-    avatarUrl?: string;
 };
 
 export type User = {

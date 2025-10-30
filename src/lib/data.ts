@@ -22,11 +22,11 @@ export const categories: Category[] = [
 ];
 
 export const sales: Sale[] = [
-  { id: '1', itemName: 'Organic Apples', quantity: 20, type: 'Sale', date: '2024-07-20', total: 50.00, avatarUrl: 'https://picsum.photos/seed/1/40/40' },
-  { id: '2', itemName: 'Carrots', quantity: 15, type: 'Sale', date: '2024-07-20', total: 22.50, avatarUrl: 'https://picsum.photos/seed/2/40/40' },
-  { id: '3', itemName: 'Chicken Feed', quantity: 2, type: 'Usage', date: '2024-07-19', total: 70.00, avatarUrl: 'https://picsum.photos/seed/3/40/40' },
-  { id: '4', itemName: 'Cow Milk', quantity: 50, type: 'Sale', date: '2024-07-19', total: 60.00, avatarUrl: 'https://picsum.photos/seed/4/40/40' },
-  { id: '5', itemName: 'Free-range Eggs', quantity: 100, type: 'Sale', date: '2024-07-18', total: 50.00, avatarUrl: 'https://picsum.photos/seed/5/40/40' },
+  { id: '1', itemName: 'Organic Apples', quantity: 20, type: 'Sale', date: '2024-07-20', total: 50.00 },
+  { id: '2', itemName: 'Carrots', quantity: 15, type: 'Sale', date: '2024-07-20', total: 22.50 },
+  { id: '3', itemName: 'Chicken Feed', quantity: 2, type: 'Usage', date: '2024-07-19', total: 70.00 },
+  { id: '4', itemName: 'Cow Milk', quantity: 50, type: 'Sale', date: '2024-07-19', total: 60.00 },
+  { id: '5', itemName: 'Free-range Eggs', quantity: 100, type: 'Sale', date: '2024-07-18', total: 50.00 },
 ];
 
 export const users: User[] = [
