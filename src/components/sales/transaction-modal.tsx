@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,120 +18,190 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { inventoryItems, categories } from "@/lib/data"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 
 type TransactionModalProps = {
   children: React.ReactNode;
 }
 
+const transactionSchema = z.object({
+  type: z.enum(["sale", "usage"], { required_error: "You must select a transaction type." }),
+  category: z.string().min(1, "Please select a category."),
+  item: z.string().min(1, "Please select an item."),
+  quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
+  customer: z.string().optional(),
+})
+
 export function TransactionModal({ children }: TransactionModalProps) {
   const { toast } = useToast()
-  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = React.useState<string | null>(null);
-  
-  const filteredItems = selectedCategory 
-    ? inventoryItems.filter(item => item.category === selectedCategory)
-    : [];
+  const [isOpen, setIsOpen] = React.useState(false);
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const form = useForm<z.infer<typeof transactionSchema>>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: {
+      type: "sale",
+      category: "",
+      item: "",
+      quantity: 1,
+      customer: "",
+    },
+  });
 
-    if (!selectedItem) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Please select an item.",
-        });
-        return;
-    }
+  const selectedCategory = form.watch("category");
 
+  const filteredItems = React.useMemo(() => {
+    if (!selectedCategory) return [];
+    return inventoryItems.filter(item => item.category === selectedCategory);
+  }, [selectedCategory]);
+
+  // Reset item when category changes
+  React.useEffect(() => {
+    form.setValue("item", "");
+  }, [selectedCategory, form]);
+
+
+  function onSubmit(values: z.infer<typeof transactionSchema>) {
+    console.log(values);
     toast({
         title: "Success!",
         description: "Transaction has been recorded successfully.",
     });
-    // Here you would typically close the dialog
-  }
-
-  const handleCategoryChange = (value: string) => {
-    setSelectedCategory(value);
-    setSelectedItem(null); // Reset item selection when category changes
+    setIsOpen(false);
+    form.reset();
   }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSubmit}>
-            <DialogHeader>
-            <DialogTitle>Record Transaction</DialogTitle>
-            <DialogDescription>
-                Select an item and enter the details of the transaction.
-            </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="category" className="text-right">
-                    Category
-                    </Label>
-                    <Select onValueChange={handleCategoryChange}>
-                    <SelectTrigger className="col-span-3">
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>Record Transaction</DialogTitle>
+          <DialogDescription>
+            Select an item and enter the details of the transaction.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+             <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Transaction Type</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex gap-4"
+                    >
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <RadioGroupItem value="sale" id="r1" />
+                        </FormControl>
+                        <FormLabel htmlFor="r1" className="font-normal">Sale</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <RadioGroupItem value="usage" id="r2" />
+                        </FormControl>
+                        <FormLabel htmlFor="r2" className="font-normal">Usage</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
-                        {categories.map(cat => (
+                      {categories.map(cat => (
                         <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                        ))}
+                      ))}
                     </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="item" className="text-right">
-                    Item
-                    </Label>
-                    <Select onValueChange={setSelectedItem} disabled={!selectedCategory}>
-                    <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder={selectedCategory ? "Select an item" : "Select category first"} />
-                    </SelectTrigger>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="item"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item</FormLabel>
+                   <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={selectedCategory ? "Select an item" : "Select a category first"} />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                         {filteredItems.map(item => (
-                        <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                            <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
                         ))}
                     </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="quantity" className="text-right">
-                    Quantity
-                    </Label>
-                    <Input id="quantity" type="number" className="col-span-3" required />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="customer" className="text-right">
-                    Customer
-                    </Label>
-                    <Input id="customer" placeholder="Optional" className="col-span-3" />
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">
-                    Type
-                    </Label>
-                    <RadioGroup defaultValue="sale" className="col-span-3 flex gap-4">
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="sale" id="r1" />
-                            <Label htmlFor="r1">Sale</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="usage" id="r2" />
-                            <Label htmlFor="r2">Usage</Label>
-                        </div>
-                    </RadioGroup>
-                </div>
-            </div>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                        <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="customer"
+              render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Customer (Optional)</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Enter customer name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
-            <Button type="submit">Submit</Button>
+                <DialogClose asChild>
+                    <Button type="button" variant="outline" onClick={() => form.reset()}>Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Submit</Button>
             </DialogFooter>
-        </form>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )
