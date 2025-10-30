@@ -26,16 +26,16 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
-// Simulating a "Staff" role by filtering nav items.
+// Simulating a "Storekeeper" role by filtering nav items.
 // In a real app, this would come from user authentication.
-const userRole = "Staff"; 
+const userRole = "Storekeeper"; 
 
 const allNavItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["Admin", "Manager", "Staff"] },
-  { href: "/inventory", icon: Package, label: "Inventory", roles: ["Admin", "Manager", "Staff"] },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["Admin", "Manager", "Staff", "Storekeeper"] },
+  { href: "/inventory", icon: Package, label: "Inventory", roles: ["Admin", "Manager", "Staff", "Storekeeper"] },
   { href: "/categories", icon: FolderKanban, label: "Categories", roles: ["Admin", "Manager"] },
-  { href: "/sales", icon: ShoppingCart, label: "Sales / Usage", roles: ["Admin", "Manager", "Staff"] },
-  { href: "/suppliers", icon: Truck, label: "Suppliers", roles: ["Admin", "Manager"] },
+  { href: "/sales", icon: ShoppingCart, label: "Sales / Usage", roles: ["Admin", "Manager", "Staff", "Storekeeper"] },
+  { href: "/suppliers", icon: Truck, label: "Suppliers", roles: ["Admin", "Manager", "Storekeeper"] },
   { href: "/reports", icon: BarChart, label: "Reports", roles: ["Admin", "Manager"] },
   { href: "/users", icon: Users, label: "Users", roles: ["Admin"] },
 ];
