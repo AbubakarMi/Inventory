@@ -1,12 +1,14 @@
+
 "use client"
 
 import { useState } from "react"
-import { AlertCircle, X } from "lucide-react"
+import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
-import { inventoryItems, topSellingItems } from "@/lib/data"
+import { inventoryItems, topSellingItems, sales } from "@/lib/data"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
 import { DashboardCharts } from "@/components/dashboard/charts"
+import { RecentSales } from "@/components/dashboard/recent-sales"
 
 export default function DashboardPage() {
   const [isAlertVisible, setIsAlertVisible] = useState(true);
@@ -42,17 +44,18 @@ export default function DashboardPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <StatCard title="Total Items in Stock" value={totalItems.toLocaleString()} />
-        <StatCard title="Low Stock Items" value={lowStockItems} />
-        <StatCard title="Total Sales" value={`₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <StatCard title="Total Inventory Value" value={`₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <StatCard title="Total Inventory Value" value={`₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<Package />} />
+        <StatCard title="Low Stock Items" value={lowStockItems} icon={<AlertTriangle />} />
+        <StatCard title="Total Sales" value={`₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<ShoppingCart />} />
+        <StatCard title="Total Items in Stock" value={totalItems.toLocaleString()} icon={<BarChart />} />
       </div>
 
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <DashboardCharts />
+      <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+            <DashboardCharts />
         </div>
-        <div>
+         <div className="lg:col-span-1 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
+          <RecentSales sales={sales.slice(0, 5)} />
           <TopProductsTable items={topSellingItems} />
         </div>
       </div>
