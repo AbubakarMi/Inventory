@@ -85,7 +85,7 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         {statCards.map(card => (
           <StatCard key={card.title} title={card.title} value={card.value} icon={card.icon} />
         ))}
