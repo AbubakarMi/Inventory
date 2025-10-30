@@ -3,6 +3,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { LogOut } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -15,6 +16,7 @@ import {
 import { UserNav } from "@/components/layout/user-nav"
 import { NotificationsDropdown } from "@/components/layout/notifications-dropdown"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Button } from "../ui/button"
 
 
 function getBreadcrumb(path: string) {
@@ -52,6 +54,12 @@ export default function Header() {
       <div className="ml-auto flex items-center gap-2">
         <NotificationsDropdown />
         <UserNav />
+        <Link href="/login">
+            <Button variant="outline" size="icon" className="h-8 w-8">
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only">Logout</span>
+            </Button>
+        </Link>
       </div>
     </header>
   )
