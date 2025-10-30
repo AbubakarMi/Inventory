@@ -32,7 +32,7 @@ export type User = {
     name: string;
     role: 'Admin' | 'Manager' | 'Staff';
     email: string;
-    status: 'Active' | 'Inactive';
+    status: 'Active' | 'Inactive' | 'Suspended';
 };
 
 export type Notification = {

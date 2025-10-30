@@ -9,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserModal } from "./user-modal"
@@ -39,7 +40,7 @@ export const columns: ColumnDef<User>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const variant = row.original.status === "Active" ? "success" : "destructive";
+      const variant = row.original.status === "Active" ? "success" : row.original.status === "Suspended" ? "warning" : "destructive";
       return <Badge variant={variant}>{row.original.status}</Badge>
     },
   },
@@ -58,12 +59,15 @@ export const columns: ColumnDef<User>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <UserModal userToEdit={user}>
-               <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+            <DropdownMenuItem>View</DropdownMenuItem>
+             <UserModal userToEdit={user}>
+               <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                     Edit
                 </button>
             </UserModal>
-            <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-orange-600 focus:text-orange-600 focus:bg-orange-100 dark:focus:bg-orange-900/50">Suspend</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

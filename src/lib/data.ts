@@ -31,6 +31,7 @@ export const users: User[] = [
   { id: '1', name: 'Alice Johnson', role: 'Admin', email: 'alice@farm.com', status: 'Active' },
   { id: '2', name: 'Bob Williams', role: 'Manager', email: 'bob@farm.com', status: 'Active' },
   { id: '3', name: 'Charlie Brown', role: 'Staff', email: 'charlie@farm.com', status: 'Inactive' },
+  { id: '4', name: 'David Smith', role: 'Staff', email: 'david@farm.com', status: 'Suspended' },
 ];
 
 export const notifications: Notification[] = [
