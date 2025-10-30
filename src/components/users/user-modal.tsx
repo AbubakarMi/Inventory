@@ -32,8 +32,6 @@ import type { User } from "@/lib/types"
 type UserModalProps = {
   children: React.ReactNode;
   userToEdit?: User;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
 }
 
 const userSchema = z.object({
@@ -53,8 +51,10 @@ const userSchema = z.object({
 });
 
 
-export function UserModal({ children, userToEdit, open, onOpenChange }: UserModalProps) {
+export function UserModal({ children, userToEdit }: UserModalProps) {
     const { toast } = useToast();
+    const [isOpen, setIsOpen] = React.useState(false);
+
     const title = userToEdit ? "Edit User" : "Add New User";
     const description = userToEdit ? "Update the user's details." : "Enter the user's details to grant them access.";
 
@@ -70,16 +70,18 @@ export function UserModal({ children, userToEdit, open, onOpenChange }: UserModa
         },
     });
 
-    // Reset form when userToEdit changes
+    // Reset form when userToEdit changes or dialog opens
     React.useEffect(() => {
-        form.reset(userToEdit || {
-            name: "",
-            email: "",
-            role: "",
-            password: "",
-            confirmPassword: "",
-        });
-    }, [userToEdit, form, open]);
+        if(isOpen) {
+            form.reset(userToEdit || {
+                name: "",
+                email: "",
+                role: "",
+                password: "",
+                confirmPassword: "",
+            });
+        }
+    }, [userToEdit, form, isOpen]);
 
     function onSubmit(values: z.infer<typeof userSchema>) {
         console.log(values);
@@ -87,14 +89,12 @@ export function UserModal({ children, userToEdit, open, onOpenChange }: UserModa
             title: "Success!",
             description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
         });
-        if (onOpenChange) {
-            onOpenChange(false);
-        }
+        setIsOpen(false);
     }
 
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
