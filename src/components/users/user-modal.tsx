@@ -32,6 +32,7 @@ import type { User } from "@/lib/types"
 type UserModalProps = {
   children: React.ReactNode;
   userToEdit?: User;
+  open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
@@ -52,8 +53,7 @@ const userSchema = z.object({
 });
 
 
-export function UserModal({ children, userToEdit, onOpenChange }: UserModalProps) {
-    const [isOpen, setIsOpen] = React.useState(false);
+export function UserModal({ children, userToEdit, open, onOpenChange }: UserModalProps) {
     const { toast } = useToast();
     const title = userToEdit ? "Edit User" : "Add New User";
     const description = userToEdit ? "Update the user's details." : "Enter the user's details to grant them access.";
@@ -70,28 +70,31 @@ export function UserModal({ children, userToEdit, onOpenChange }: UserModalProps
         },
     });
 
+    // Reset form when userToEdit changes
+    React.useEffect(() => {
+        form.reset(userToEdit || {
+            name: "",
+            email: "",
+            role: "",
+            password: "",
+            confirmPassword: "",
+        });
+    }, [userToEdit, form, open]);
+
     function onSubmit(values: z.infer<typeof userSchema>) {
         console.log(values);
         toast({
             title: "Success!",
             description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
         });
-        setIsOpen(false);
         if (onOpenChange) {
-            onOpenChange(false);
-        }
-    }
-
-    const handleOpenChange = (open: boolean) => {
-        setIsOpen(open);
-        if (!open && onOpenChange) {
             onOpenChange(false);
         }
     }
 
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
