@@ -2,11 +2,11 @@
 "use client"
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 
 type UseSubmitOptions<T extends Record<string, any>> = {
-    form: ReturnType<typeof useForm<T>>;
+    form: UseFormReturn<T>;
     formatValues?: (values: T) => any;
     entity: string;
     id?: string;
@@ -29,8 +29,16 @@ export function useSubmit<T extends Record<string, any>>({
             description: `${entity} has been ${id ? 'updated' : 'created'}.`,
         });
         setIsOpen(false);
-        form.reset();
     };
+    
+    // Reset form when the dialog is closed to avoid stale data
+    React.useEffect(() => {
+        if (!isOpen) {
+            // A slight delay to allow the dialog to close before resetting
+            setTimeout(() => form.reset(), 100);
+        }
+    }, [isOpen, form]);
+
 
     return {
         isOpen,

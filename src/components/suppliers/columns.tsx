@@ -25,10 +25,10 @@ const renderStars = (rating: number) => {
     const stars = [];
     for (let i = 0; i < 5; i++) {
         stars.push(
-            <Star key={i} className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+            <Star key={i} className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'}`} />
         )
     }
-    return <div className="flex items-center">{stars}</div>
+    return <div className="flex items-center gap-0.5">{stars}</div>
 }
 
 export const columns: ColumnDef<Supplier>[] = [
@@ -40,12 +40,12 @@ export const columns: ColumnDef<Supplier>[] = [
   {
     accessorKey: "contact",
     header: "Contact",
-    cell: ({ row }) => <div>{row.original.contact}</div>,
+    cell: ({ row }) => <div className="text-muted-foreground">{row.original.contact}</div>,
   },
   {
     accessorKey: "products",
     header: "Products Supplied",
-    cell: ({ row }) => <div className="flex flex-wrap gap-1">{row.original.products.map(p => <Badge key={p} variant="outline">{p}</Badge>)}</div>,
+    cell: ({ row }) => <div className="flex flex-wrap gap-1">{row.original.products.map(p => <Badge key={p} variant="outline" className="font-normal">{p}</Badge>)}</div>,
   },
   {
     accessorKey: "rating",
