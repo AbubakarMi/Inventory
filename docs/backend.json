@@ -1,0 +1,218 @@
+{
+    "entities": {
+        "user": {
+            "title": "User",
+            "description": "A user of the application.",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The user's full name."
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "The user's email address."
+                },
+                "role": {
+                    "type": "string",
+                    "description": "The user's role.",
+                    "enum": [
+                        "Admin",
+                        "Manager",
+                        "Staff",
+                        "Storekeeper"
+                    ]
+                },
+                "status": {
+                    "type": "string",
+                    "description": "The user's account status.",
+                    "enum": [
+                        "Active",
+                        "Inactive",
+                        "Suspended"
+                    ]
+                }
+            },
+            "required": [
+                "name",
+                "email",
+                "role",
+                "status"
+            ]
+        },
+        "inventoryItem": {
+            "title": "Inventory Item",
+            "description": "An item in the inventory.",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "cost": {
+                    "type": "number"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "expiry": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "supplier": {
+                    "type": "string"
+                },
+                "threshold": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "name",
+                "category",
+                "quantity",
+                "unit",
+                "cost",
+                "price",
+                "threshold"
+            ]
+        },
+        "category": {
+            "title": "Category",
+            "description": "A category for inventory items.",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "sale": {
+            "title": "Sale",
+            "description": "A sales or usage transaction.",
+            "type": "object",
+            "properties": {
+                "itemName": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "Sale",
+                        "Usage"
+                    ]
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "total": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "itemName",
+                "quantity",
+                "type",
+                "date",
+                "total"
+            ]
+        },
+        "supplier": {
+            "title": "Supplier",
+            "description": "A supplier of inventory items.",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "contact": {
+                    "type": "string"
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rating": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "name",
+                "contact",
+                "products",
+                "rating"
+            ]
+        }
+    },
+    "auth": {
+        "providers": [
+            "email-password"
+        ],
+        "customClaims": {
+            "role": {
+                "type": "string",
+                "enum": [
+                    "Admin",
+                    "Manager",
+                    "Staff",
+                    "Storekeeper"
+                ]
+            }
+        }
+    },
+    "firestore": {
+        "/users/{userId}": {
+            "schema": {
+                "$ref": "#/entities/user"
+            },
+            "description": "Stores user profile information."
+        },
+        "/inventory": {
+            "schema": {
+                "$ref": "#/entities/inventoryItem"
+            },
+            "description": "Collection of all inventory items."
+        },
+        "/categories": {
+            "schema": {
+                "$ref": "#/entities/category"
+            },
+            "description": "Collection of all item categories."
+        },
+        "/sales": {
+            "schema": {
+                "$ref": "#/entities/sale"
+            },
+            "description": "Collection of all sales and usage transactions."
+        },
+        "/suppliers": {
+            "schema": {
+                "$ref": "#/entities/supplier"
+            },
+            "description": "Collection of all suppliers."
+        }
+    }
+}
