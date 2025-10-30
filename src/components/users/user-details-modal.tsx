@@ -24,10 +24,11 @@ type UserDetailsModalProps = {
 }
 
 export function UserDetailsModal({ children, user }: UserDetailsModalProps) {
+    const [isOpen, setIsOpen] = React.useState(false);
     const statusVariant = user.status === "Active" ? "success" : user.status === "Suspended" ? "warning" : "destructive";
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
@@ -58,7 +59,7 @@ export function UserDetailsModal({ children, user }: UserDetailsModalProps) {
                     <DialogClose asChild>
                         <Button variant="outline">Close</Button>
                     </DialogClose>
-                    <UserModal userToEdit={user}>
+                    <UserModal userToEdit={user} onOpenChange={() => setIsOpen(false)}>
                         <Button>Edit User</Button>
                     </UserModal>
                 </DialogFooter>

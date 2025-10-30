@@ -1,6 +1,7 @@
 
 "use client"
 
+import * as React from "react";
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -31,6 +32,7 @@ import type { User } from "@/lib/types"
 type UserModalProps = {
   children: React.ReactNode;
   userToEdit?: User;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const userSchema = z.object({
@@ -50,7 +52,8 @@ const userSchema = z.object({
 });
 
 
-export function UserModal({ children, userToEdit }: UserModalProps) {
+export function UserModal({ children, userToEdit, onOpenChange }: UserModalProps) {
+    const [isOpen, setIsOpen] = React.useState(false);
     const { toast } = useToast();
     const title = userToEdit ? "Edit User" : "Add New User";
     const description = userToEdit ? "Update the user's details." : "Enter the user's details to grant them access.";
@@ -73,12 +76,22 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
             title: "Success!",
             description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
         });
-        // Here you would close the dialog.
+        setIsOpen(false);
+        if (onOpenChange) {
+            onOpenChange(false);
+        }
+    }
+
+    const handleOpenChange = (open: boolean) => {
+        setIsOpen(open);
+        if (!open && onOpenChange) {
+            onOpenChange(false);
+        }
     }
 
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -167,7 +180,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                 />
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button type="button" variant="outline">Cancel</Button>
                     </DialogClose>
                     <Button type="submit">Save Changes</Button>
                 </DialogFooter>
