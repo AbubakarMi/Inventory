@@ -1,8 +1,18 @@
+
+"use client"
+
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart, Download } from "lucide-react";
+import { Download } from "lucide-react";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { dailyTrendsData } from "@/lib/data"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
+
+const chartConfig = {
+  value: { label: "Sales" },
+}
 
 export default function ReportsPage() {
     return (
@@ -49,10 +59,16 @@ export default function ReportsPage() {
                         <CardDescription>A summary of sales within the selected date range.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] flex items-center justify-center bg-muted rounded-lg">
-                            <BarChart className="h-16 w-16 text-muted-foreground" />
-                            <p className="ml-4 text-muted-foreground">Sales chart would be displayed here.</p>
-                        </div>
+                        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={dailyTrendsData}>
+                                    <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value}`} />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={4} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
                     </CardContent>
                 </Card>
                 
