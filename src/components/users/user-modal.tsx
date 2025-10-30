@@ -25,29 +25,39 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
+import type { User } from "@/lib/types"
 
 type UserModalProps = {
   children: React.ReactNode;
+  userToEdit?: User;
 }
 
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   role: z.string().min(1, "Role is required"),
-  password: z.string().min(8, "Password must be at least 8 characters long"),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
+  password: z.string().min(8, "Password must be at least 8 characters long").optional().or(z.literal('')),
+  confirmPassword: z.string().optional(),
+}).refine(data => {
+    if(data.password) {
+        return data.password === data.confirmPassword;
+    }
+    return true;
+}, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
 
-export function UserModal({ children }: UserModalProps) {
+export function UserModal({ children, userToEdit }: UserModalProps) {
     const { toast } = useToast();
+    const title = userToEdit ? "Edit User" : "Add New User";
+    const description = userToEdit ? "Update the user's details." : "Enter the user's details to grant them access.";
+
 
     const form = useForm<z.infer<typeof userSchema>>({
         resolver: zodResolver(userSchema),
-        defaultValues: {
+        defaultValues: userToEdit || {
             name: "",
             email: "",
             role: "",
@@ -60,7 +70,7 @@ export function UserModal({ children }: UserModalProps) {
         console.log(values);
         toast({
             title: "Success!",
-            description: `User "${values.name}" has been created.`,
+            description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
         });
         // Here you would close the dialog.
     }
@@ -73,9 +83,9 @@ export function UserModal({ children }: UserModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New User</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Enter the user's details to grant them access.
+            {description}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -135,7 +145,7 @@ export function UserModal({ children }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
-                                <Input type="password" {...field} />
+                                <Input type="password" {...field} placeholder={userToEdit ? "Leave blank to keep current password" : ""}/>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -158,7 +168,7 @@ export function UserModal({ children }: UserModalProps) {
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Add User</Button>
+                    <Button type="submit">Save Changes</Button>
                 </DialogFooter>
             </form>
         </Form>
