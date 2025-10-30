@@ -42,7 +42,7 @@ export default function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2">
             <Tractor className="h-6 w-6 text-primary" />
-            <span className="font-semibold">FarmSight</span>
+            <span className="font-semibold text-lg">FarmSight</span>
         </div>
         <SidebarTrigger />
       </SidebarHeader>
