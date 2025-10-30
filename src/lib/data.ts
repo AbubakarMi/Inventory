@@ -52,11 +52,12 @@ export const dailyTrendsData: ChartData[] = [
 ];
 
 export const categoryBreakdownData: PieChartData[] = [
-    { name: 'Fruits', value: 150, fill: 'var(--color-chart-1)' },
-    { name: 'Vegetables', value: 80, fill: 'var(--color-chart-2)' },
-    { name: 'Dairy', value: 500, fill: 'var(--color-chart-3)' },
-    { name: 'Feed', value: 15, fill: 'var(--color-chart-4)' },
-    { name: 'Supplies', value: 45, fill: 'var(--color-chart-5)' },
+    { name: 'Fruits', value: 150, fill: 'var(--color-fruits)' },
+    { name: 'Vegetables', value: 80, fill: 'var(--color-vegetables)' },
+    { name: 'Dairy', value: 500, fill: 'var(--color-dairy)' },
+    { name: 'Feed', value: 15, fill: 'var(--color-feed)' },
+    { name: 'Supplies', value: 45, fill: 'var(--color-supplies)' },
+    { name: 'Processed Goods', value: 9, fill: 'var(--color-processed-goods)' },
 ];
 
 export const topSellingItems = [

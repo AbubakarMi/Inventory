@@ -17,6 +17,7 @@ const chartConfig = {
   dairy: { label: "Dairy", color: "hsl(var(--chart-3))" },
   feed: { label: "Feed", color: "hsl(var(--chart-4))" },
   supplies: { label: "Supplies", color: "hsl(var(--chart-5))" },
+  "processed goods": { label: "Processed Goods", color: "hsl(var(--destructive))" },
 }
 
 export function DashboardCharts() {
@@ -55,13 +56,16 @@ export function DashboardCharts() {
           </ChartContainer>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="flex flex-col">
         <CardHeader>
           <CardTitle>Category Breakdown</CardTitle>
           <CardDescription>Distribution of items across categories.</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 pb-0">
-          <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
+        <CardContent className="flex-1 flex items-center justify-center pb-6">
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square w-full max-w-[250px]"
+          >
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <ChartTooltip
