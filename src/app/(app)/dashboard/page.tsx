@@ -1,12 +1,12 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, PlusCircle, PenSquare, FileText } from "lucide-react"
+import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, PlusCircle, PenSquare, FileText, Users } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
-import { inventoryItems, topSellingItems, sales } from "@/lib/data"
+import { inventoryItems, topSellingItems, sales, users } from "@/lib/data"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
 import { DashboardCharts } from "@/components/dashboard/charts"
 import { RecentSales } from "@/components/dashboard/recent-sales"
@@ -16,11 +16,21 @@ import { Button } from "@/components/ui/button"
 export default function DashboardPage() {
   const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
   const [isWelcomeAlertVisible, setIsWelcomeAlertVisible] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    setUserRole(role);
+  }, []);
 
   const totalItems = inventoryItems.reduce((sum, item) => sum + item.quantity, 0)
   const lowStockItems = inventoryItems.filter(item => item.status === 'Low Stock').length
   const inventoryValue = inventoryItems.reduce((sum, item) => sum + item.cost * item.quantity, 0)
   const totalSales = 2856.50 // static value
+  const totalUsers = users.length;
+
+  const isAdmin = userRole === 'Admin';
+  const isManager = userRole === 'Manager';
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -69,7 +79,8 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <StatCard title="Total Inventory Value" value={`₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<Package />} />
         <StatCard title="Low Stock Items" value={lowStockItems} icon={<AlertTriangle />} />
-        <StatCard title="Total Sales" value={`₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<ShoppingCart />} />
+        { (isAdmin || isManager) && <StatCard title="Total Sales" value={`₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={<ShoppingCart />} /> }
+        { isAdmin && <StatCard title="Total Users" value={totalUsers} icon={<Users />} /> }
         <StatCard title="Total Items in Stock" value={totalItems.toLocaleString()} icon={<BarChart />} />
       </div>
 
@@ -93,15 +104,24 @@ export default function DashboardPage() {
                   <PenSquare className="mr-2 h-4 w-4" /> Record a Sale
                 </Button>
               </Link>
-              <Link href="/reports" passHref>
-                <Button className="w-full justify-start">
-                  <FileText className="mr-2 h-4 w-4" /> Generate Report
-                </Button>
-              </Link>
+              { (isAdmin || isManager) && (
+                <Link href="/reports" passHref>
+                  <Button className="w-full justify-start">
+                    <FileText className="mr-2 h-4 w-4" /> Generate Report
+                  </Button>
+                </Link>
+              )}
+              { isAdmin && (
+                <Link href="/users" passHref>
+                  <Button className="w-full justify-start">
+                    <Users className="mr-2 h-4 w-4" /> Manage Users
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
           <RecentSales sales={sales.slice(0, 5)} />
-          <TopProductsTable items={topSellingItems} />
+          { (isAdmin || isManager) && <TopProductsTable items={topSellingItems} /> }
         </div>
       </div>
     </div>
