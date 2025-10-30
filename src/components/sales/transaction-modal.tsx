@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { inventoryItems } from "@/lib/data"
+import { inventoryItems, categories } from "@/lib/data"
 
 type TransactionModalProps = {
   children: React.ReactNode;
@@ -23,14 +24,35 @@ type TransactionModalProps = {
 
 export function TransactionModal({ children }: TransactionModalProps) {
   const { toast } = useToast()
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = React.useState<string | null>(null);
+  
+  const filteredItems = selectedCategory 
+    ? inventoryItems.filter(item => item.category === selectedCategory)
+    : [];
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!selectedItem) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Please select an item.",
+        });
+        return;
+    }
+
     toast({
         title: "Success!",
         description: "Transaction has been recorded successfully.",
     });
     // Here you would typically close the dialog
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    setSelectedItem(null); // Reset item selection when category changes
   }
 
   return (
@@ -47,16 +69,31 @@ export function TransactionModal({ children }: TransactionModalProps) {
             </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="category" className="text-right">
+                    Category
+                    </Label>
+                    <Select onValueChange={handleCategoryChange}>
+                    <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="item" className="text-right">
                     Item
                     </Label>
-                    <Select>
+                    <Select onValueChange={setSelectedItem} disabled={!selectedCategory}>
                     <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select an item" />
+                        <SelectValue placeholder={selectedCategory ? "Select an item" : "Select category first"} />
                     </SelectTrigger>
                     <SelectContent>
-                        {inventoryItems.map(item => (
+                        {filteredItems.map(item => (
                         <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
                         ))}
                     </SelectContent>
@@ -66,7 +103,7 @@ export function TransactionModal({ children }: TransactionModalProps) {
                     <Label htmlFor="quantity" className="text-right">
                     Quantity
                     </Label>
-                    <Input id="quantity" type="number" className="col-span-3" />
+                    <Input id="quantity" type="number" className="col-span-3" required />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="customer" className="text-right">
