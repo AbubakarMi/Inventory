@@ -18,6 +18,12 @@ export type Category = {
     parent: string | null;
 };
 
+export type EnrichedCategory = Category & {
+    itemCount: number;
+    totalStock: number;
+    unit: string;
+};
+
 export type Sale = {
     id: string;
     itemName: string;

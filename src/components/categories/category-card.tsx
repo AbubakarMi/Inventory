@@ -1,22 +1,28 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, FolderKanban } from "lucide-react";
-import type { Category } from "@/lib/types";
+import { MoreVertical, FolderKanban, Package, Sigma } from "lucide-react";
+import type { EnrichedCategory } from "@/lib/types";
 import { CategoryModal } from "./category-modal";
+import { Separator } from "../ui/separator";
 
 type CategoryCardProps = {
-    category: Category;
+    category: EnrichedCategory;
 }
 
 export function CategoryCard({ category }: CategoryCardProps) {
     return (
-        <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <FolderKanban className="text-accent" />
-                    {category.name}
-                </CardTitle>
+        <Card className="hover:shadow-md transition-shadow flex flex-col">
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+                <div className="flex flex-col gap-1">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                        <FolderKanban className="text-accent" />
+                        {category.name}
+                    </CardTitle>
+                    <div className="text-xs text-muted-foreground pl-8">
+                        {category.parent ? `Sub-category of ${category.parent}` : 'Parent Category'}
+                    </div>
+                </div>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -31,9 +37,20 @@ export function CategoryCard({ category }: CategoryCardProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </CardHeader>
-            <CardContent>
-                <div className="text-xs text-muted-foreground">
-                    {category.parent ? `Sub-category of ${category.parent}` : 'Parent Category'}
+            <CardContent className="flex-1">
+                <Separator className="my-2" />
+                <div className="grid grid-cols-2 gap-4 text-sm pt-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Package className="h-4 w-4"/>
+                        <span>Items</span>
+                    </div>
+                    <span className="font-semibold text-right">{category.itemCount}</span>
+
+                     <div className="flex items-center gap-2 text-muted-foreground">
+                        <Sigma className="h-4 w-4"/>
+                        <span>Total Stock</span>
+                    </div>
+                    <span className="font-semibold text-right">{category.totalStock} {category.unit && ` ${category.unit}`}</span>
                 </div>
             </CardContent>
         </Card>
