@@ -27,7 +27,7 @@ export function DashboardCharts() {
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dailyTrendsData}>
                     <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value}`} />
                     <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
                     <Bar dataKey="value" fill="hsl(var(--primary))" radius={4} />
                 </BarChart>

@@ -36,6 +36,6 @@ export const columns: ColumnDef<Sale>[] = [
   {
     accessorKey: "total",
     header: "Total Amount",
-    cell: ({ row }) => <div>${row.original.total.toFixed(2)}</div>,
+    cell: ({ row }) => <div>₦{row.original.total.toFixed(2)}</div>,
   },
 ]

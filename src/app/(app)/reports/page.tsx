@@ -30,15 +30,15 @@ export default function ReportsPage() {
                     <CardContent className="grid gap-4 md:grid-cols-3">
                         <div className="p-4 bg-muted rounded-lg">
                             <h3 className="text-sm font-medium text-muted-foreground">Total Revenue</h3>
-                            <p className="text-2xl font-bold">$12,450.00</p>
+                            <p className="text-2xl font-bold">₦12,450.00</p>
                         </div>
                         <div className="p-4 bg-muted rounded-lg">
                             <h3 className="text-sm font-medium text-muted-foreground">Total Cost</h3>
-                            <p className="text-2xl font-bold">$7,820.00</p>
+                            <p className="text-2xl font-bold">₦7,820.00</p>
                         </div>
                         <div className="p-4 bg-green-100 dark:bg-green-900/50 rounded-lg">
                             <h3 className="text-sm font-medium text-green-700 dark:text-green-400">Net Profit</h3>
-                            <p className="text-2xl font-bold text-green-700 dark:text-green-400">$4,630.00</p>
+                            <p className="text-2xl font-bold text-green-700 dark:text-green-400">₦4,630.00</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -76,13 +76,13 @@ export default function ReportsPage() {
                                     <TableCell>Organic Apples</TableCell>
                                     <TableCell>Fruits</TableCell>
                                     <TableCell>150 kg</TableCell>
-                                    <TableCell>$180.00</TableCell>
+                                    <TableCell>₦180.00</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell>Carrots</TableCell>
                                     <TableCell>Vegetables</TableCell>
                                     <TableCell>80 kg</TableCell>
-                                    <TableCell>$64.00</TableCell>
+                                    <TableCell>₦64.00</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
