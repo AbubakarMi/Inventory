@@ -1,9 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import {
-  Search,
-} from "lucide-react"
 import { usePathname } from "next/navigation"
 
 import {
@@ -14,7 +11,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Input } from "@/components/ui/input"
 import { UserNav } from "@/components/layout/user-nav"
 import { NotificationsDropdown } from "@/components/layout/notifications-dropdown"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -22,7 +18,10 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function getBreadcrumb(path: string) {
   const pathParts = path.split('/').filter(Boolean);
-  const breadcrumb = pathParts[0] || 'Dashboard';
+  // a/b/c -> a
+  // a -> a
+  const appPath = pathParts.length > 1 ? pathParts[1] : pathParts[0];
+  const breadcrumb = appPath || 'Dashboard';
   return breadcrumb.charAt(0).toUpperCase() + breadcrumb.slice(1);
 }
 
@@ -39,7 +38,7 @@ export default function Header() {
               <Link href="/dashboard">Dashboard</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          {pathname !== '/dashboard' && (
+          {pathname !== '/dashboard' && pathname !== '/' && (
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -49,16 +48,10 @@ export default function Header() {
           )}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="relative ml-auto flex-1 md:grow-0">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search..."
-          className="w-full rounded-lg bg-card pl-8 md:w-[200px] lg:w-[336px]"
-        />
+      <div className="ml-auto flex items-center gap-4 md:gap-2">
+        <NotificationsDropdown />
+        <UserNav />
       </div>
-      <NotificationsDropdown />
-      <UserNav />
     </header>
   )
 }
