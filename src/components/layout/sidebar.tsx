@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import * as React from "react";
 
 import {
   Sidebar,
@@ -26,9 +27,6 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
-// Simulating a "Storekeeper" role by filtering nav items.
-// In a real app, this would come from user authentication.
-const userRole = "Storekeeper"; 
 
 const allNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", roles: ["Admin", "Manager", "Staff", "Storekeeper"] },
@@ -40,11 +38,23 @@ const allNavItems = [
   { href: "/users", icon: Users, label: "Users", roles: ["Admin"] },
 ];
 
-const navItems = allNavItems.filter(item => item.roles.includes(userRole));
-
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    // On component mount, get the role from localStorage.
+    // This will only run on the client-side.
+    const role = localStorage.getItem("userRole");
+    setUserRole(role || "Staff"); // Default to 'Staff' if no role is found
+  }, []);
+
+  const navItems = React.useMemo(() => {
+    if (!userRole) return [];
+    return allNavItems.filter(item => item.roles.includes(userRole));
+  }, [userRole]);
+
 
   return (
     <Sidebar>

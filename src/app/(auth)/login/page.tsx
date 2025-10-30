@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -12,11 +13,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tractor } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 })
+
+const roleEmails: Record<string, string> = {
+    "admin@gmail.com": "Admin",
+    "manager@gmail.com": "Manager",
+    "storekeeper@gmail.com": "Storekeeper",
+    "staff@gmail.com": "Staff",
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,9 +38,22 @@ export default function LoginPage() {
   })
 
   function onSubmit(values: z.infer<typeof loginSchema>) {
-    console.log(values)
-    // Simulate successful login and redirect
-    router.push("/dashboard")
+    const role = roleEmails[values.email.toLowerCase()];
+
+    if (role) {
+      localStorage.setItem('userRole', role);
+      toast({
+        title: "Login Successful",
+        description: `Welcome, ${role}!`,
+      });
+      router.push("/dashboard")
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: "Invalid credentials. Please try again.",
+      });
+    }
   }
 
   return (
