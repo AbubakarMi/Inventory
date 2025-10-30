@@ -44,9 +44,6 @@ export default function LoginPage() {
     }
 
     try {
-      // We will still use the client-side SDK to finalize the login.
-      // The API route is not currently being used in this flow, but has been created.
-      // The root cause of the error is the Firebase project configuration.
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
@@ -62,7 +59,6 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login Error:", error);
       let description = "An unexpected error occurred. Please try again.";
-      // This is the error you are seeing.
       if (error.code === 'auth/configuration-not-found') {
         description = "Authentication is not configured for this project. Please enable Email/Password sign-in in your Firebase console.";
       } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
