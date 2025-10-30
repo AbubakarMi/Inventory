@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Badge } from "@/components/ui/badge"
@@ -6,6 +7,7 @@ import { ItemModal } from "./item-modal"
 import { Button } from "../ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { ActionConfirmationDialog } from "../action-confirmation-dialog"
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -64,7 +66,16 @@ export const columns: ColumnDef<InventoryItem>[] = [
                         Edit
                     </button>
                 </ItemModal>
-                <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                <ActionConfirmationDialog
+                  title="Are you absolutely sure?"
+                  description={`This action cannot be undone. This will permanently delete "${item.name}".`}
+                  onConfirm={() => console.log(`Deleting ${item.name}`)}
+                  variant="destructive"
+                >
+                  <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                    Delete
+                  </button>
+                </ActionConfirmationDialog>
             </DropdownMenuContent>
         </DropdownMenu>
       )

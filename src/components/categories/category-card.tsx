@@ -5,6 +5,7 @@ import { MoreVertical, FolderKanban, Package, Sigma } from "lucide-react";
 import type { EnrichedCategory } from "@/lib/types";
 import { CategoryModal } from "./category-modal";
 import { Separator } from "../ui/separator";
+import { ActionConfirmationDialog } from "../action-confirmation-dialog";
 
 type CategoryCardProps = {
     category: EnrichedCategory;
@@ -33,7 +34,16 @@ export function CategoryCard({ category }: CategoryCardProps) {
                          <CategoryModal categoryToEdit={category}>
                              <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground">Edit</button>
                         </CategoryModal>
-                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                        <ActionConfirmationDialog
+                            title="Are you absolutely sure?"
+                            description={`This will delete the "${category.name}" category. This action cannot be undone.`}
+                            onConfirm={() => console.log(`Deleting ${category.name}`)}
+                            variant="destructive"
+                        >
+                            <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                Delete
+                            </button>
+                        </ActionConfirmationDialog>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </CardHeader>
