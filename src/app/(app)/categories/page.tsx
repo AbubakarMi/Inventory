@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { categories, inventoryItems } from "@/lib/data";
 import { CategoryCard } from "@/components/categories/category-card";

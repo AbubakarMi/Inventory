@@ -1,8 +1,9 @@
+
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
 import { MoreVertical, FolderKanban, Package, Sigma } from "lucide-react";
 import type { EnrichedCategory } from "@/lib/types";
 import { CategoryModal } from "./category-modal";
