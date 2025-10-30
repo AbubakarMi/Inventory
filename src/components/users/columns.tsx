@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { UserDetailsModal } from "./user-details-modal"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
-import { useFirestore } from "@/firebase"
-import { updateDocument } from "@/firebase/firestore/mutations"
+import { useAuth } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
 
 export type ColumnDef<TData> = {
@@ -46,7 +45,7 @@ export const columns: ColumnDef<User>[] = [
     cell: ({ row }) => {
       const user = row.original;
       const variant = user.status === "Active" ? "success" : user.status === "Suspended" ? "warning" : "destructive";
-      return <Badge variant={variant}>{row.original.status}</Badge>
+      return <Badge variant={variant}>{user.status}</Badge>
     },
   },
   {
@@ -54,16 +53,32 @@ export const columns: ColumnDef<User>[] = [
     header: "Actions",
     cell: ({ row }) => {
       const user = row.original;
-      const firestore = useFirestore();
+      const auth = useAuth();
       const { toast } = useToast();
 
       const handleStatusChange = async (status: 'Active' | 'Suspended' | 'Inactive') => {
-        if (!firestore) return;
+        const currentUser = auth?.currentUser;
+        if (!currentUser) return;
+        
         try {
-          await updateDocument(firestore, 'users', user.id, { status });
+          const token = await currentUser.getIdToken();
+          const response = await fetch(`/api/users/${user.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status })
+          });
+          
+          if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Failed to update user status.');
+          }
+
           toast({ title: "Success", description: `User status changed to ${status}.`})
-        } catch (error) {
-          toast({ variant: 'destructive', title: "Error", description: "Failed to update user status."})
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: "Error", description: error.message})
         }
       }
 

@@ -27,40 +27,25 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
-import type { User } from "@/lib/types"
-import { useFirestore } from "@/firebase";
-import { addDocument } from "@/firebase/firestore/mutations";
-
-type UserModalProps = {
-  children: React.ReactNode;
-  userToEdit?: User;
-}
+import { useAuth } from "@/firebase";
 
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  role: z.string().min(1, "Role is required"),
-  // Note: Password handling should be done via a secure backend function in a real app
-  // For this prototype, we'll just log it.
-  password: z.string().min(8, "Password must be at least 8 characters long").optional().or(z.literal('')),
-  confirmPassword: z.string().optional(),
-}).refine(data => {
-    if(data.password) {
-        return data.password === data.confirmPassword;
-    }
-    return true;
-}, {
+  role: z.enum(['Admin', 'Manager', 'Staff', 'Storekeeper']),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
 
-export function UserModal({ children, userToEdit }: UserModalProps) {
+export function UserModal({ children }: { children: React.ReactNode }) {
     const { toast } = useToast();
-    const firestore = useFirestore();
+    const auth = useAuth();
     const [isOpen, setIsOpen] = React.useState(false);
 
-    // This modal should only be for adding users. Editing users is more complex.
     const title = "Add New User";
     const description = "Enter the user's details to grant them access.";
 
@@ -83,25 +68,38 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
     }, [form, isOpen]);
 
     async function onSubmit(values: z.infer<typeof userSchema>) {
-        if (!firestore) return;
-        // In a real app, you would use a Cloud Function to create the user in Firebase Auth
-        // and set their custom claims. Here we just add to Firestore.
-        const userData: Omit<User, 'id'> = {
-          name: values.name,
-          email: values.email,
-          role: values.role as User['role'],
-          status: 'Active'
-        }
-        
+      const user = auth?.currentUser;
+      const token = user ? await user.getIdToken() : null;
+
         try {
-          await addDocument(firestore, 'users', userData);
+          const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: values.name,
+              email: values.email,
+              role: values.role,
+              password: values.password
+            })
+          });
+          
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || "Failed to create user.");
+          }
+
           toast({
               title: "Success!",
-              description: `User "${values.name}" has been created. They need to be assigned a password.`,
+              description: `User "${values.name}" has been created.`,
           });
           setIsOpen(false);
-        } catch (error) {
-          toast({ variant: 'destructive', title: "Error", description: "Failed to create user."})
+
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: "Error", description: error.message})
         }
     }
 
@@ -176,7 +174,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
-                                <Input type="password" {...field} placeholder={userToEdit ? "Leave blank to keep current password" : ""}/>
+                                <Input type="password" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -199,7 +197,9 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                     <DialogClose asChild>
                         <Button type="button" variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Save Changes</Button>
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting ? "Creating..." : "Create User"}
+                    </Button>
                 </DialogFooter>
             </form>
         </Form>
