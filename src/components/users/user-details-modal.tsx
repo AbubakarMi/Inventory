@@ -31,7 +31,7 @@ export function UserDetailsModal({ children, user }: UserDetailsModalProps) {
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{user.name}</DialogTitle>
                     <DialogDescription>
@@ -40,15 +40,15 @@ export function UserDetailsModal({ children, user }: UserDetailsModalProps) {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-3 items-center gap-4">
-                        <Label className="text-muted-foreground">Email</Label>
-                        <div className="col-span-2">{user.email}</div>
+                        <Label className="text-muted-foreground text-right">Email</Label>
+                        <div className="col-span-2 font-medium">{user.email}</div>
                     </div>
                     <div className="grid grid-cols-3 items-center gap-4">
-                        <Label className="text-muted-foreground">Role</Label>
-                        <div className="col-span-2">{user.role}</div>
+                        <Label className="text-muted-foreground text-right">Role</Label>
+                        <div className="col-span-2 font-medium">{user.role}</div>
                     </div>
                     <div className="grid grid-cols-3 items-center gap-4">
-                        <Label className="text-muted-foreground">Status</Label>
+                        <Label className="text-muted-foreground text-right">Status</Label>
                         <div className="col-span-2">
                              <Badge variant={statusVariant}>{user.status}</Badge>
                         </div>
@@ -66,5 +66,3 @@ export function UserDetailsModal({ children, user }: UserDetailsModalProps) {
         </Dialog>
     )
 }
-
-    
