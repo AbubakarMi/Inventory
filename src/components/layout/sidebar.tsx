@@ -50,16 +50,15 @@ export default function AppSidebar() {
         <SidebarMenu>
             {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                        asChild
-                        isActive={pathname.startsWith(item.href)}
-                        tooltip={item.label}
-                    >
-                        <Link href={item.href}>
+                    <Link href={item.href}>
+                        <SidebarMenuButton
+                            isActive={pathname.startsWith(item.href)}
+                            tooltip={item.label}
+                        >
                             <item.icon />
                             <span>{item.label}</span>
-                        </Link>
-                    </SidebarMenuButton>
+                        </SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
             ))}
         </SidebarMenu>
@@ -67,12 +66,12 @@ export default function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/settings')} tooltip="Settings">
-                    <Link href="/settings">
+                <Link href="/settings">
+                    <SidebarMenuButton isActive={pathname.startsWith('/settings')} tooltip="Settings">
                         <Settings />
                         <span>Settings</span>
-                    </Link>
-                </SidebarMenuButton>
+                    </SidebarMenuButton>
+                </Link>
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
