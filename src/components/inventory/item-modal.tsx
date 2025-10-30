@@ -9,21 +9,78 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { categories } from "@/lib/data"
-import { InventoryItem } from "@/lib/types"
+import type { InventoryItem } from "@/lib/types"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { useToast } from "@/hooks/use-toast"
+import { Textarea } from "../ui/textarea"
 
 type ItemModalProps = {
   children: React.ReactNode;
   itemToEdit?: InventoryItem;
 }
 
+const itemSchema = z.object({
+  name: z.string().min(1, "Item name is required"),
+  category: z.string().min(1, "Category is required"),
+  quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
+  unit: z.string().min(1, "Unit is required"),
+  cost: z.coerce.number().min(0, "Cost price cannot be negative"),
+  price: z.coerce.number().min(0, "Selling price cannot be negative"),
+  expiry: z.string().optional(),
+  supplier: z.string().optional(),
+  threshold: z.coerce.number().min(0, "Threshold cannot be negative"),
+})
+
 export function ItemModal({ children, itemToEdit }: ItemModalProps) {
+  const { toast } = useToast();
   const title = itemToEdit ? "Edit Item" : "Add New Item";
   const description = itemToEdit ? "Update the details of your inventory item." : "Fill in the details to add a new item to your inventory.";
+
+  const form = useForm<z.infer<typeof itemSchema>>({
+    resolver: zodResolver(itemSchema),
+    defaultValues: itemToEdit ? {
+      ...itemToEdit,
+      expiry: itemToEdit.expiry ? new Date(itemToEdit.expiry).toISOString().split('T')[0] : '',
+    } : {
+      name: "",
+      category: "",
+      quantity: 0,
+      unit: "",
+      cost: 0,
+      price: 0,
+      expiry: "",
+      supplier: "",
+      threshold: 10,
+    },
+  })
+
+  function onSubmit(values: z.infer<typeof itemSchema>) {
+    console.log(values);
+    toast({
+      title: `Success!`,
+      description: `Item "${values.name}" has been ${itemToEdit ? 'updated' : 'added'}.`,
+    })
+    // Here you would typically close the dialog.
+    // This requires controlling the open state of the Dialog.
+  }
+
 
   return (
     <Dialog>
@@ -37,75 +94,149 @@ export function ItemModal({ children, itemToEdit }: ItemModalProps) {
             {description}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input id="name" defaultValue={itemToEdit?.name} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="category" className="text-right">
-              Category
-            </Label>
-            <Select defaultValue={itemToEdit?.category}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="quantity" className="text-right">
-              Quantity
-            </Label>
-            <Input id="quantity" type="number" defaultValue={itemToEdit?.quantity} className="col-span-3" />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="unit" className="text-right">
-              Unit
-            </Label>
-            <Input id="unit" defaultValue={itemToEdit?.unit} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="cost" className="text-right">
-              Cost Price
-            </Label>
-            <Input id="cost" type="number" defaultValue={itemToEdit?.cost} className="col-span-3" />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="price" className="text-right">
-              Selling Price
-            </Label>
-            <Input id="price" type="number" defaultValue={itemToEdit?.price} className="col-span-3" />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="expiry" className="text-right">
-              Expiry Date
-            </Label>
-            <Input id="expiry" type="date" defaultValue={itemToEdit?.expiry} className="col-span-3" />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="supplier" className="text-right">
-              Supplier
-            </Label>
-            <Input id="supplier" defaultValue={itemToEdit?.supplier} className="col-span-3" />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="threshold" className="text-right">
-              Threshold
-            </Label>
-            <Input id="threshold" type="number" defaultValue={itemToEdit?.threshold} className="col-span-3" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="submit" variant="default">Save changes</Button>
-          <Button variant="outline">Cancel</Button>
-        </DialogFooter>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-4">
+                  <FormLabel className="text-right">Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} className="col-span-3" />
+                  </FormControl>
+                  <FormMessage className="col-span-4 text-right" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-4 items-center gap-4">
+                  <FormLabel className="text-right">Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="col-span-4 text-right" />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Quantity</FormLabel>
+                        <FormControl>
+                            <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Unit (e.g. kg, lbs)</FormLabel>
+                        <FormControl>
+                            <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
+             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="cost"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Cost Price</FormLabel>
+                        <FormControl>
+                            <Input type="number" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Selling Price</FormLabel>
+                        <FormControl>
+                            <Input type="number" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
+             <FormField
+              control={form.control}
+              name="expiry"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expiry Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="supplier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supplier (Optional)</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="threshold"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Low Stock Threshold</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                   <FormDescription>
+                    Receive a notification when stock drops to this level.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Save changes</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )
