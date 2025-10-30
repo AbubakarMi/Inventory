@@ -59,9 +59,6 @@ export function UserDetailsModal({ children, user }: UserDetailsModalProps) {
                     <DialogClose asChild>
                         <Button variant="outline">Close</Button>
                     </DialogClose>
-                     <UserModal userToEdit={user}>
-                        <Button>Edit User</Button>
-                    </UserModal>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
