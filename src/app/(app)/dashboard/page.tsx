@@ -2,13 +2,16 @@
 "use client"
 
 import { useState } from "react"
-import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper } from "lucide-react"
+import Link from "next/link"
+import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, PlusCircle, PenSquare, FileText } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
 import { inventoryItems, topSellingItems, sales } from "@/lib/data"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
 import { DashboardCharts } from "@/components/dashboard/charts"
 import { RecentSales } from "@/components/dashboard/recent-sales"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 export default function DashboardPage() {
   const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
@@ -75,6 +78,28 @@ export default function DashboardPage() {
             <DashboardCharts />
         </div>
          <div className="lg:col-span-1 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              <Link href="/inventory" passHref>
+                <Button className="w-full justify-start">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
+                </Button>
+              </Link>
+              <Link href="/sales" passHref>
+                <Button className="w-full justify-start">
+                  <PenSquare className="mr-2 h-4 w-4" /> Record a Sale
+                </Button>
+              </Link>
+              <Link href="/reports" passHref>
+                <Button className="w-full justify-start">
+                  <FileText className="mr-2 h-4 w-4" /> Generate Report
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
           <RecentSales sales={sales.slice(0, 5)} />
           <TopProductsTable items={topSellingItems} />
         </div>
