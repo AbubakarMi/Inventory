@@ -13,7 +13,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { UserNav } from "@/components/layout/user-nav"
 import { NotificationsDropdown } from "@/components/layout/notifications-dropdown"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "../ui/button"
@@ -53,7 +52,6 @@ export default function Header() {
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
         <NotificationsDropdown />
-        <UserNav />
         <Link href="/login">
             <Button variant="outline" size="icon" className="h-8 w-8">
                 <LogOut className="h-4 w-4" />
