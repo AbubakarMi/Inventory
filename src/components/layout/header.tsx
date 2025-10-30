@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -48,7 +49,7 @@ export default function Header() {
           )}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="ml-auto flex items-center gap-4 md:gap-2">
+      <div className="ml-auto flex items-center gap-2">
         <NotificationsDropdown />
         <UserNav />
       </div>
