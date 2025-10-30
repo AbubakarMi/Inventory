@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -39,7 +40,7 @@ export function DashboardCharts() {
               <ResponsiveContainer width="100%" height="100%">
                   <AreaChart 
                     data={dailyTrendsData}
-                    margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                     margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
                   >
                       <defs>
                         <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">

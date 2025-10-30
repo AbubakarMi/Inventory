@@ -9,7 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
 import { inventoryItems, topSellingItems, sales, users } from "@/lib/data"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
-import { DashboardCharts } from "@/components/dashboard/charts"
+import { DailyTrendsChart } from "@/components/dashboard/daily-trends-chart"
+import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdown-chart"
 import { RecentSales } from "@/components/dashboard/recent-sales"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -93,8 +94,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-            <DashboardCharts />
+        <div className="lg:col-span-2 grid gap-4">
+            <DailyTrendsChart />
         </div>
          <div className="lg:col-span-1 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
           <Card>
@@ -129,6 +130,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           <RecentSales sales={sales.slice(0, 5)} />
+          <CategoryBreakdownChart />
           { (isAdmin || isManager) && <TopProductsTable items={topSellingItems} /> }
         </div>
       </div>
