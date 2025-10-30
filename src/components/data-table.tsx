@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -30,8 +31,8 @@ export function DataTable<TData, TValue>({
   const paginatedData = data.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
   return (
-    <div>
-        <div className="rounded-md border">
+    <div className="w-full">
+        <div className="rounded-md border overflow-auto">
         <Table>
             <TableHeader>
             <TableRow>
