@@ -100,28 +100,28 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
+            <CardContent className="grid grid-cols-2 gap-2">
               <Link href="/inventory" passHref>
-                <Button className="w-full justify-start">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
+                <Button variant="outline" className="w-full">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                 </Button>
               </Link>
               <Link href="/sales" passHref>
-                <Button className="w-full justify-start">
-                  <PenSquare className="mr-2 h-4 w-4" /> Record a Sale
+                <Button variant="outline" className="w-full">
+                  <PenSquare className="mr-2 h-4 w-4" /> Record Sale
                 </Button>
               </Link>
               { (isAdmin || isManager) && (
                 <Link href="/reports" passHref>
-                  <Button className="w-full justify-start">
-                    <FileText className="mr-2 h-4 w-4" /> Generate Report
+                  <Button variant="outline" className="w-full">
+                    <FileText className="mr-2 h-4 w-4" /> Reports
                   </Button>
                 </Link>
               )}
               { isAdmin && (
                 <Link href="/users" passHref>
-                  <Button className="w-full justify-start">
-                    <Users className="mr-2 h-4 w-4" /> Manage Users
+                  <Button variant="outline" className="w-full">
+                    <Users className="mr-2 h-4 w-4" /> Users
                   </Button>
                 </Link>
               )}
