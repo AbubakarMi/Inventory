@@ -11,9 +11,11 @@ import { getDocs, collection } from 'firebase/firestore';
 
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useUser();
+  const { user, claims, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+  
+  // This state tracks the initial, hard auth check on page load.
   const [initialAuthCheck, setInitialAuthCheck] = useState(true);
 
   useEffect(() => {
@@ -46,7 +48,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, router]);
 
-  if (loading || initialAuthCheck) {
+  // We are loading if the initial auth check hasn't finished,
+  // OR if the useUser hook is still loading,
+  // OR if we have a user but their claims haven't loaded yet.
+  const isLoading = initialAuthCheck || loading || (user && !claims);
+
+  if (isLoading) {
     return (
         <div className="flex flex-col h-screen w-full">
             <div className="flex h-14 items-center border-b px-4">

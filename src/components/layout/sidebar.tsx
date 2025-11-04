@@ -44,13 +44,15 @@ const allNavItems = [
 export default function AppSidebar() {
   const pathname = usePathname();
   const { isMobile, state } = useSidebar();
-  const { user, claims } = useUser();
+  const { claims } = useUser();
   const userRole = claims?.role;
 
   const navItems = React.useMemo(() => {
-    // Admin sees everything, no filtering needed.
+    // Admin sees everything. This is the highest priority check.
     if (userRole === 'Admin') return allNavItems;
+    
     if (!userRole) return [];
+
     // For other roles, filter based on their allowed roles.
     return allNavItems.filter(item => item.roles.includes(userRole));
   }, [userRole]);
