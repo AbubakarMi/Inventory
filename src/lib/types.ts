@@ -1,7 +1,8 @@
 
 
+// The 'id' is optional for new items that don't have an ID from Firestore yet.
 export type InventoryItem = {
-    id: string;
+    id?: string;
     name: string;
     category: string;
     quantity: number;
@@ -9,13 +10,13 @@ export type InventoryItem = {
     status: 'In Stock' | 'Low Stock' | 'Out of Stock';
     cost: number;
     price: number;
-    expiry: string;
-    supplier: string;
+    expiry?: string;
+    supplier?: string;
     threshold: number;
 };
 
 export type Category = {
-    id: string;
+    id?: string;
     name: string;
     parent: string | null;
 };
@@ -27,7 +28,7 @@ export type EnrichedCategory = Category & {
 };
 
 export type Sale = {
-    id: string;
+    id?: string;
     itemName: string;
     quantity: number;
     type: 'Sale' | 'Usage';
@@ -36,7 +37,7 @@ export type Sale = {
 };
 
 export type User = {
-    id: string;
+    id?: string; // Corresponds to Firebase Auth UID
     name: string;
     role: 'Admin' | 'Manager' | 'Staff' | 'Storekeeper';
     email: string;
@@ -61,8 +62,8 @@ export type PieChartData = {
 };
 
 export type Supplier = {
-    id: string;
-    name: string;
+    id?: string;
+    name:string;
     contact: string;
     products: string[];
     rating: number;

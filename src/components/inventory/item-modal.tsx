@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -15,8 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { categories } from "@/lib/data"
-import type { InventoryItem } from "@/lib/types"
+import type { InventoryItem, Category } from "@/lib/types"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -30,11 +28,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
-import { Textarea } from "../ui/textarea"
+import { addInventoryItem, updateInventoryItem } from "@/firebase/services/inventory"
 
 type ItemModalProps = {
   children: React.ReactNode;
   itemToEdit?: InventoryItem;
+  categories: Category[];
 }
 
 const itemSchema = z.object({
@@ -49,28 +48,16 @@ const itemSchema = z.object({
   threshold: z.coerce.number().min(0, "Threshold cannot be negative"),
 })
 
-export function ItemModal({ children, itemToEdit }: ItemModalProps) {
+type ItemFormValues = z.infer<typeof itemSchema>;
+
+export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
   const title = itemToEdit ? "Edit Item" : "Add New Item";
   const description = itemToEdit ? "Update the details of your inventory item." : "Fill in the details to add a new item to your inventory.";
 
-  const form = useForm<z.infer<typeof itemSchema>>({
+  const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemSchema),
-    defaultValues: itemToEdit ? {
-      ...itemToEdit,
-      expiry: itemToEdit.expiry ? new Date(itemToEdit.expiry).toISOString().split('T')[0] : '',
-    } : {
-      name: "",
-      category: "",
-      quantity: 0,
-      unit: "",
-      cost: 0,
-      price: 0,
-      expiry: "",
-      supplier: "",
-      threshold: 10,
-    },
   })
   
   React.useEffect(() => {
@@ -92,15 +79,27 @@ export function ItemModal({ children, itemToEdit }: ItemModalProps) {
     }
   }, [isOpen, itemToEdit, form]);
 
-  function onSubmit(values: z.infer<typeof itemSchema>) {
-    console.log(values);
-    toast({
-      title: `Success!`,
-      description: `Item "${values.name}" has been ${itemToEdit ? 'updated' : 'added'}.`,
-    })
-    setIsOpen(false);
+  async function onSubmit(values: ItemFormValues) {
+    try {
+      if (itemToEdit?.id) {
+        await updateInventoryItem(itemToEdit.id, values);
+      } else {
+        await addInventoryItem(values);
+      }
+      toast({
+        title: `Success!`,
+        description: `Item "${values.name}" has been ${itemToEdit ? 'updated' : 'added'}.`,
+      })
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to save item:", error);
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: "There was a problem with your request.",
+      })
+    }
   }
-
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

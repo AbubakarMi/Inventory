@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -18,12 +17,14 @@ interface DataTableProps<TData, TValue> {
     header: string
     cell: (props: { row: { original: TData } }) => React.ReactNode
   }[]
-  data: TData[]
+  data: TData[],
+  emptyState?: React.ReactNode,
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  emptyState
 }: DataTableProps<TData, TValue>) {
   const [page, setPage] = React.useState(0);
   const rowsPerPage = 10;
@@ -44,7 +45,7 @@ export function DataTable<TData, TValue>({
             <TableBody>
             {paginatedData.length ? (
                 paginatedData.map((row, index) => (
-                <TableRow key={index}>
+                <TableRow key={(row as any).id || index}>
                     {columns.map((column) => (
                     <TableCell key={column.accessorKey}>
                         {column.cell({ row: { original: row } })}
@@ -55,14 +56,15 @@ export function DataTable<TData, TValue>({
             ) : (
                 <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
+                    {emptyState || "No results."}
                 </TableCell>
                 </TableRow>
             )}
             </TableBody>
         </Table>
         </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
+       {pageCount > 1 && (
+         <div className="flex items-center justify-end space-x-2 py-4">
             <Button
                 variant="outline"
                 size="sm"
@@ -83,6 +85,7 @@ export function DataTable<TData, TValue>({
                 Next
             </Button>
         </div>
+       )}
     </div>
   )
 }
