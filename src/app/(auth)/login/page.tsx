@@ -67,11 +67,11 @@ export default function LoginPage() {
         try {
           toast({ title: "Admin user not found.", description: "Attempting to create it now..." });
           
-          // 1. Create the user directly on the client
+          // 1. Create the user directly on the client to get a UID
           const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
           const newUser = userCredential.user;
 
-          // 2. Call a special API route to set the admin role
+          // 2. Call a special API route to set the admin role claim
           const response = await fetch('/api/set-admin-role', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -82,10 +82,13 @@ export default function LoginPage() {
             const result = await response.json();
             throw new Error(result.error || "Failed to set admin role.");
           }
+
+          // Force refresh the token to get the new custom claim
+          await newUser.getIdToken(true);
           
           toast({ title: "Admin user created & role assigned!", description: "Logging you in..." });
           
-          // 3. Retry login, which will now succeed
+          // 3. Retry login, which will now succeed and redirect
           await attemptLogin(values);
 
         } catch (creationError: any) {
