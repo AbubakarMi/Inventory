@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tractor } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth, useFirestore } from "@/firebase"
+import { useAuth } from "@/firebase"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -60,31 +60,32 @@ export default function LoginPage() {
     } catch (error: any) {
       // ONE-TIME ADMIN CREATION LOGIC
       if (
-        (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/configuration-not-found') &&
+        (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') &&
         values.email === 'admin@gmail.com' &&
         values.password === 'Password123'
       ) {
         try {
           toast({ title: "Admin user not found.", description: "Attempting to create it now..." });
           
-          const response = await fetch('/api/users', {
+          // 1. Create the user directly on the client
+          const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+          const newUser = userCredential.user;
+
+          // 2. Call a special API route to set the admin role
+          const response = await fetch('/api/set-admin-role', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: 'Admin',
-              email: values.email,
-              role: 'Admin',
-              password: values.password
-            })
+            body: JSON.stringify({ uid: newUser.uid })
           });
 
           if (!response.ok) {
             const result = await response.json();
-            throw new Error(result.error || "Failed to create admin user via API.");
+            throw new Error(result.error || "Failed to set admin role.");
           }
           
-          toast({ title: "Admin user created!", description: "Logging you in..." });
-          // Retry login after creation
+          toast({ title: "Admin user created & role assigned!", description: "Logging you in..." });
+          
+          // 3. Retry login, which will now succeed
           await attemptLogin(values);
 
         } catch (creationError: any) {
