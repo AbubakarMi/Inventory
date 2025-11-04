@@ -33,6 +33,21 @@ export default function LoginPage() {
     },
   })
 
+  async function attemptLogin(values: z.infer<typeof loginSchema>) {
+    if (!auth) throw new Error("Auth not initialized");
+    const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+    const user = userCredential.user;
+    const idTokenResult = await user.getIdTokenResult();
+    const role = idTokenResult.claims.role;
+
+    toast({
+      title: "Login Successful",
+      description: `Welcome, ${role || 'User'}!`,
+    });
+
+    router.push("/dashboard");
+  }
+
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     if (!auth) {
       toast({
@@ -44,19 +59,48 @@ export default function LoginPage() {
     }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
-      
-      const idTokenResult = await user.getIdTokenResult();
-      const role = idTokenResult.claims.role;
-
-      toast({
-        title: "Login Successful",
-        description: `Welcome, ${role || 'User'}!`,
-      });
-
-      router.push("/dashboard")
+      await attemptLogin(values);
     } catch (error: any) {
+      // ONE-TIME ADMIN CREATION LOGIC
+      if (
+        error.code === 'auth/user-not-found' &&
+        values.email === 'admin@gmail.com' &&
+        values.password === 'Password123'
+      ) {
+        try {
+          toast({ title: "Admin user not found.", description: "Attempting to create it now..." });
+          
+          const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: 'Admin',
+              email: values.email,
+              role: 'Admin',
+              password: values.password
+            })
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || "Failed to create admin user.");
+          }
+          
+          toast({ title: "Admin user created!", description: "Logging you in..." });
+          // Retry login after creation
+          await attemptLogin(values);
+
+        } catch (creationError: any) {
+           toast({
+            variant: "destructive",
+            title: "Admin Creation Failed",
+            description: creationError.message || "An unexpected error occurred.",
+          });
+        }
+        return;
+      }
+      
+      // Standard error handling
       console.error("Login Error:", error);
       let description = "An unexpected error occurred. Please try again.";
       if (error.code === 'auth/configuration-not-found') {
