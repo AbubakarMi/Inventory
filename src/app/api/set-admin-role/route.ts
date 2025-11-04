@@ -6,25 +6,26 @@ import { z } from 'zod';
 
 const setAdminSchema = z.object({
   uid: z.string().min(1, "UID is required"),
+  email: z.string().email(),
+  name: z.string().min(1),
 });
 
-// This route is specifically for the one-time seeding of the first admin user.
-// In a production environment, this should be heavily secured or removed after first use.
+// This route's only job is to set a custom claim and create the user's Firestore doc.
+// It should only be callable as part of the initial admin user seeding.
 export async function POST(request: Request) {
   try {
     const json = await request.json();
-    const { uid } = setAdminSchema.parse(json);
+    const { uid, email, name } = setAdminSchema.parse(json);
 
     // Set custom claim for the admin role
     await admin.auth().setCustomUserClaims(uid, { role: 'Admin' });
 
     // Also create the user's document in Firestore to match
     const userRef = db.collection('users').doc(uid);
-    const userRecord = await admin.auth().getUser(uid);
     
     await userRef.set({
-        name: userRecord.displayName || 'Admin',
-        email: userRecord.email,
+        name: name,
+        email: email,
         role: 'Admin',
         status: 'Active',
     });

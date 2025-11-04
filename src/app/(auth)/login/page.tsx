@@ -35,8 +35,11 @@ export default function LoginPage() {
 
   async function attemptLogin(values: z.infer<typeof loginSchema>) {
     if (!auth) throw new Error("Auth not initialized");
-    await signInWithEmailAndPassword(auth, values.email, values.password);
+    const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
     
+    // Force a token refresh to get latest claims after login.
+    await userCredential.user.getIdToken(true);
+
     toast({
       title: "Login Successful",
       description: `Welcome back!`,
@@ -75,7 +78,7 @@ export default function LoginPage() {
           const response = await fetch('/api/set-admin-role', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid: newUser.uid })
+            body: JSON.stringify({ uid: newUser.uid, email: newUser.email, name: 'Admin' })
           });
 
           if (!response.ok) {
