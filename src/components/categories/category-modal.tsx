@@ -125,14 +125,18 @@ export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Parent Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || ""} disabled={isSubmitting}>
+                  <Select
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                    defaultValue={field.value || "none"}
+                    disabled={isSubmitting}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a parent (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {(categories || []).filter(c => c.id !== categoryToEdit?.id).map(cat => (
                         <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                       ))}
