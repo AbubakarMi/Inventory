@@ -49,6 +49,7 @@ export default function AppSidebar() {
 
   const navItems = React.useMemo(() => {
     if (!userRole) return [];
+    if (userRole === 'Admin') return allNavItems;
     return allNavItems.filter(item => item.roles.includes(userRole));
   }, [userRole]);
 
