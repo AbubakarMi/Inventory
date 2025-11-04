@@ -1,22 +1,21 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import type { InventoryItem, Category } from "@/lib/types"
+import type { InventoryItem, Category, Toast } from "@/lib/types"
 import { ItemModal } from "./item-modal"
 import { Button } from "../ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
 import { deleteInventoryItem } from "@/firebase/services/inventory"
-import { useToast } from "@/hooks/use-toast"
 
 type ColumnsProps = {
     categories: Category[];
+    toast: (options: Toast) => void;
 }
 
-export const getColumns = ({ categories }: ColumnsProps) => {
-    const { toast } = useToast();
-
+export const getColumns = ({ categories, toast }: ColumnsProps) => {
+    
     const handleDelete = async (item: InventoryItem) => {
         if (!item.id) return;
         try {

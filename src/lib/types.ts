@@ -68,3 +68,9 @@ export type Supplier = {
     products: string[];
     rating: number;
 };
+
+export type Toast = {
+    title?: string;
+    description?: string;
+    variant?: "default" | "destructive";
+};

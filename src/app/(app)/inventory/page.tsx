@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -14,11 +13,13 @@ import { initializeFirebase, useCollection } from "@/firebase"
 import { collection, query } from "firebase/firestore"
 import type { InventoryItem, Category } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 export default function InventoryPage() {
   const { firestore } = initializeFirebase();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const { toast } = useToast();
   
   const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
   const categoriesQuery = useMemo(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
@@ -39,7 +40,7 @@ export default function InventoryPage() {
       );
   }, [inventoryItems, searchTerm, selectedCategory]);
 
-  const columns = useMemo(() => getColumns({ categories: categories || [] }), [categories]);
+  const columns = useMemo(() => getColumns({ categories: categories || [], toast }), [categories, toast]);
 
   if (loadingItems || loadingCategories) {
     return (
