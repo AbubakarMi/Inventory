@@ -45,7 +45,8 @@ const categorySchema = z.object({
 
 export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) {
   const { firestore } = initializeFirebase()
-  const { data: categories } = useCollection<Category>(firestore ? query(collection(firestore, 'categories')) : null);
+  const categoriesQuery = React.useMemo(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
+  const { data: categories } = useCollection<Category>(categoriesQuery);
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);

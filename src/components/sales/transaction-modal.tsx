@@ -47,8 +47,12 @@ const transactionSchema = z.object({
 
 export function TransactionModal({ children, transactionToEdit }: TransactionModalProps) {
   const { firestore } = initializeFirebase();
-  const { data: inventoryItems } = useCollection<InventoryItem>(firestore ? query(collection(firestore, 'inventory')) : null);
-  const { data: categories } = useCollection<Category>(firestore ? query(collection(firestore, 'categories')) : null);
+  
+  const inventoryQuery = React.useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
+  const categoriesQuery = React.useMemo(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
+
+  const { data: inventoryItems } = useCollection<InventoryItem>(inventoryQuery);
+  const { data: categories } = useCollection<Category>(categoriesQuery);
 
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
