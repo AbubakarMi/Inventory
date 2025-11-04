@@ -7,10 +7,11 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { initializeFirebase } from '..';
+import { getDocs, collection } from 'firebase/firestore';
 
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, claims } = useUser();
+  const { user, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const [initialAuthCheck, setInitialAuthCheck] = useState(true);
@@ -18,13 +19,22 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Only run this on the client
     if (typeof window !== 'undefined') {
-        const { auth } = initializeFirebase();
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const { auth, firestore } = initializeFirebase();
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user && pathname !== '/login') {
                  // allow access to /users page if no users exist
                 if (pathname === '/users') {
-                     setInitialAuthCheck(false);
-                     return;
+                    try {
+                        const usersSnapshot = await getDocs(collection(firestore, "users"));
+                        if (usersSnapshot.empty) {
+                            setInitialAuthCheck(false);
+                            return;
+                        }
+                    } catch(e) {
+                        // If collection doesn't exist, it's the first run
+                        setInitialAuthCheck(false);
+                        return;
+                    }
                 }
                 router.push('/login');
             } else {
