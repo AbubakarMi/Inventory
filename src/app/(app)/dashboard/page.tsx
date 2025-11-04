@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
-import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, Users, FileText, PlusCircle, PenSquare } from "lucide-react"
+import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, Users, FileText, PlusCircle, PenSquare, PackageX, CalendarClock, Truck } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { initializeFirebase, useCollection, useUser } from "@/firebase"
 import { collection, query } from "firebase/firestore"
-import type { InventoryItem, Sale, User as AppUser, PieChartData } from "@/lib/types"
+import type { InventoryItem, Sale, User as AppUser, PieChartData, Supplier } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
+import { isBefore, addDays } from "date-fns"
 
 export default function DashboardPage() {
   const { firestore } = initializeFirebase();
@@ -23,24 +24,41 @@ export default function DashboardPage() {
   const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
   const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales')) : null, [firestore]);
   const usersQuery = useMemo(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
+  const suppliersQuery = useMemo(() => firestore ? query(collection(firestore, 'suppliers')) : null, [firestore]);
   
   const { data: inventoryItems, loading: loadingInventory } = useCollection<InventoryItem>(inventoryQuery);
   const { data: sales, loading: loadingSales } = useCollection<Sale>(salesQuery);
   const { data: users, loading: loadingUsers } = useCollection<AppUser>(usersQuery);
+  const { data: suppliers, loading: loadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+
 
   const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
   const [isWelcomeAlertVisible, setIsWelcomeAlertVisible] = useState(true);
 
   const userRole = user?.claims?.role;
 
-  const { totalItems, lowStockItems, inventoryValue, totalSalesValue, totalUsers, categoryBreakdown, topSellingItems } = useMemo(() => {
-    if (!inventoryItems || !sales || !users) {
+  const { 
+      totalItems, 
+      lowStockItems,
+      outOfStockItems,
+      expiringSoon,
+      inventoryValue, 
+      totalSalesValue, 
+      totalUsers,
+      totalSuppliers,
+      categoryBreakdown, 
+      topSellingItems 
+    } = useMemo(() => {
+    if (!inventoryItems || !sales || !users || !suppliers) {
       return {
         totalItems: 0,
         lowStockItems: 0,
+        outOfStockItems: 0,
+        expiringSoon: 0,
         inventoryValue: 0,
         totalSalesValue: 0,
         totalUsers: 0,
+        totalSuppliers: 0,
         categoryBreakdown: [],
         topSellingItems: [],
       };
@@ -48,9 +66,16 @@ export default function DashboardPage() {
     
     const totalItems = inventoryItems.reduce((sum, item) => sum + item.quantity, 0);
     const lowStockItems = inventoryItems.filter(item => item.status === 'Low Stock').length;
+    const outOfStockItems = inventoryItems.filter(item => item.status === 'Out of Stock').length;
+    
+    const expiringSoon = inventoryItems.filter(item => 
+        item.expiry && isBefore(new Date(item.expiry), addDays(new Date(), 7))
+    ).length;
+
     const inventoryValue = inventoryItems.reduce((sum, item) => sum + item.cost * item.quantity, 0);
     const totalSalesValue = sales.reduce((sum, sale) => sum + sale.total, 0);
     const totalUsers = users.length;
+    const totalSuppliers = suppliers.length;
 
     const categoryCounts: { [key: string]: number } = {};
     inventoryItems.forEach(item => {
@@ -91,21 +116,24 @@ export default function DashboardPage() {
         .map(([name, data]) => ({ name, ...data }));
 
 
-    return { totalItems, lowStockItems, inventoryValue, totalSalesValue, totalUsers, categoryBreakdown, topSellingItems };
+    return { totalItems, lowStockItems, outOfStockItems, expiringSoon, inventoryValue, totalSalesValue, totalUsers, totalSuppliers, categoryBreakdown, topSellingItems };
 
-  }, [inventoryItems, sales, users]);
+  }, [inventoryItems, sales, users, suppliers]);
 
-  const loading = loadingInventory || loadingSales || loadingUsers;
+  const loading = loadingInventory || loadingSales || loadingUsers || loadingSuppliers;
 
   const isAdmin = userRole === 'Admin';
   const isManager = userRole === 'Manager';
 
   const statCards = [
-    { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Across all items" },
-    { title: "Low Stock Items", value: lowStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory?status=low", description: "Items below threshold" },
+    { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager"], link: "/inventory", description: "Across all items" },
     { title: "Total Sales", value: `₦${totalSalesValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"], link: "/sales", description: "This month" },
     { title: "Total Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Sum of all quantities" },
-    { title: "Total Users", value: totalUsers, icon: <Users />, roles: ["Admin"], link: "/users", description: "System-wide users" }
+    { title: "Low Stock Items", value: lowStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory?status=low", description: "Items below threshold", variant: "warning" },
+    { title: "Out of Stock Items", value: outOfStockItems, icon: <PackageX />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory?status=out", description: "Items to restock", variant: "destructive" },
+    { title: "Expiring Soon", value: expiringSoon, icon: <CalendarClock />, roles: ["Admin", "Manager", "Storekeeper"], link: "/inventory?status=expiring", description: "Items expiring in 7 days" },
+    { title: "Total Users", value: totalUsers, icon: <Users />, roles: ["Admin"], link: "/users", description: "System-wide users" },
+    { title: "Total Suppliers", value: totalSuppliers, icon: <Truck />, roles: ["Admin", "Manager"], link: "/suppliers", description: "All registered suppliers" },
   ].filter(card => userRole && card.roles.includes(userRole));
 
 
@@ -115,8 +143,8 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                   <h1 className="font-semibold text-lg md:text-2xl">Dashboard</h1>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-36 w-full" />)}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
+                  {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-36 w-full" />)}
               </div>
               <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
                   <div className="lg:col-span-2 grid gap-4">
@@ -176,9 +204,9 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map(card => (
-          <StatCard key={card.title} title={card.title} value={card.value} icon={card.icon} description={card.description} linkHref={card.link} />
+          <StatCard key={card.title} {...card} />
         ))}
       </div>
 

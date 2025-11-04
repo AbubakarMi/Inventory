@@ -58,6 +58,14 @@
                 "unit": {
                     "type": "string"
                 },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "In Stock",
+                        "Low Stock",
+                        "Out of Stock"
+                    ]
+                },
                 "cost": {
                     "type": "number"
                 },
@@ -80,6 +88,7 @@
                 "category",
                 "quantity",
                 "unit",
+                "status",
                 "cost",
                 "price",
                 "threshold"
@@ -216,3 +225,4 @@
         }
     }
 }
+    
