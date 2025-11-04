@@ -14,11 +14,9 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { inventoryItems, categories } from "@/lib/data"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -30,7 +28,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import type { Sale } from "@/lib/types"
+import type { Sale, InventoryItem, Category } from "@/lib/types"
+import { addSale, updateSale } from "@/firebase/services/sales"
+import { initializeFirebase, useCollection } from "@/firebase"
+import { collection, query } from "firebase/firestore"
 
 type TransactionModalProps = {
   children: React.ReactNode;
@@ -40,78 +41,100 @@ type TransactionModalProps = {
 const transactionSchema = z.object({
   type: z.enum(["Sale", "Usage"], { required_error: "You must select a transaction type." }),
   category: z.string().min(1, "Please select a category."),
-  item: z.string().min(1, "Please select an item."),
+  itemName: z.string().min(1, "Please select an item."),
   quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
-  customer: z.string().optional(),
 })
 
 export function TransactionModal({ children, transactionToEdit }: TransactionModalProps) {
+  const { firestore } = initializeFirebase();
+  const { data: inventoryItems } = useCollection<InventoryItem>(firestore ? query(collection(firestore, 'inventory')) : null);
+  const { data: categories } = useCollection<Category>(firestore ? query(collection(firestore, 'categories')) : null);
+
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const defaultCategory = transactionToEdit ? inventoryItems.find(i => i.name === transactionToEdit.itemName)?.category : "";
+  const defaultCategory = transactionToEdit && inventoryItems ? inventoryItems.find(i => i.name === transactionToEdit.itemName)?.category : "";
 
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
     defaultValues: transactionToEdit ? {
         type: transactionToEdit.type,
         category: defaultCategory,
-        item: transactionToEdit.itemName,
+        itemName: transactionToEdit.itemName,
         quantity: transactionToEdit.quantity,
-        customer: "" // customer data not available in Sale type
     } : {
       type: "Sale",
       category: "",
-      item: "",
+      itemName: "",
       quantity: 1,
-      customer: "",
     },
   });
 
   const selectedCategory = form.watch("category");
 
   const filteredItems = React.useMemo(() => {
-    if (!selectedCategory) return [];
+    if (!selectedCategory || !inventoryItems) return [];
     return inventoryItems.filter(item => item.category === selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, inventoryItems]);
 
-  // Reset item when category changes
   React.useEffect(() => {
       if (!transactionToEdit || selectedCategory !== defaultCategory) {
-        form.setValue("item", "");
+        form.setValue("itemName", "");
     }
   }, [selectedCategory, form, transactionToEdit, defaultCategory]);
 
   React.useEffect(() => {
-    if (transactionToEdit) {
-        const defaultCat = inventoryItems.find(i => i.name === transactionToEdit.itemName)?.category
-        form.reset({
-             type: transactionToEdit.type,
-            category: defaultCat,
-            item: transactionToEdit.itemName,
-            quantity: transactionToEdit.quantity,
-            customer: ""
-        })
-    } else {
-        form.reset({
-            type: "Sale",
-            category: "",
-            item: "",
-            quantity: 1,
-            customer: "",
-        })
+    if (isOpen) {
+        if (transactionToEdit) {
+            const defaultCat = inventoryItems?.find(i => i.name === transactionToEdit.itemName)?.category
+            form.reset({
+                type: transactionToEdit.type,
+                category: defaultCat,
+                itemName: transactionToEdit.itemName,
+                quantity: transactionToEdit.quantity,
+            })
+        } else {
+            form.reset({
+                type: "Sale",
+                category: "",
+                itemName: "",
+                quantity: 1,
+            })
+        }
     }
-  }, [transactionToEdit, form, isOpen])
+  }, [transactionToEdit, form, isOpen, inventoryItems])
 
 
-  function onSubmit(values: z.infer<typeof transactionSchema>) {
-    console.log(values);
-    toast({
-        title: "Success!",
-        description: `Transaction has been ${transactionToEdit ? 'updated' : 'recorded'} successfully.`,
-    });
-    setIsOpen(false);
-    form.reset();
+  async function onSubmit(values: z.infer<typeof transactionSchema>) {
+    try {
+        const item = inventoryItems?.find(i => i.name === values.itemName);
+        if (!item) throw new Error("Item not found");
+
+        if (transactionToEdit?.id) {
+            // Note: updating a sale does not currently re-adjust inventory.
+            await updateSale(transactionToEdit.id, {
+                ...values,
+                total: values.quantity * item.price,
+            });
+        } else {
+            await addSale({
+                ...values,
+                total: values.quantity * item.price,
+            });
+        }
+        toast({
+            title: "Success!",
+            description: `Transaction has been ${transactionToEdit ? 'updated' : 'recorded'} successfully.`,
+        });
+        setIsOpen(false);
+    } catch(error: any) {
+        console.error(error);
+        toast({
+            variant: "destructive",
+            title: "Uh oh! Something went wrong.",
+            description: error.message || "There was a problem with your request.",
+        });
+    }
   }
 
   const title = transactionToEdit ? "Edit Transaction" : "Record Transaction";
@@ -174,7 +197,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map(cat => (
+                      {categories?.map(cat => (
                         <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -185,7 +208,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
             />
              <FormField
               control={form.control}
-              name="item"
+              name="itemName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Item</FormLabel>
@@ -213,19 +236,6 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
                     <FormLabel>Quantity</FormLabel>
                     <FormControl>
                         <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="customer"
-              render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Customer (Optional)</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Enter customer name" {...field} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>

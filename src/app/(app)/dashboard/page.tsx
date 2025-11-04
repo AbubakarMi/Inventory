@@ -1,33 +1,101 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, Users, FileText, PlusCircle, PenSquare } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
-import { inventoryItems, topSellingItems, sales, users } from "@/lib/data"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
 import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdown-chart"
 import { RecentSales } from "@/components/dashboard/recent-sales"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { initializeFirebase, useCollection, useUser } from "@/firebase"
+import { collection, query } from "firebase/firestore"
+import type { InventoryItem, Sale, User as AppUser, PieChartData } from "@/lib/types"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function DashboardPage() {
+  const { firestore } = initializeFirebase();
+  const { user } = useUser();
+
+  const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
+  const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales')) : null, [firestore]);
+  const usersQuery = useMemo(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
+  
+  const { data: inventoryItems, loading: loadingInventory } = useCollection<InventoryItem>(inventoryQuery);
+  const { data: sales, loading: loadingSales } = useCollection<Sale>(salesQuery);
+  const { data: users, loading: loadingUsers } = useCollection<AppUser>(usersQuery);
+
   const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
   const [isWelcomeAlertVisible, setIsWelcomeAlertVisible] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
 
-  useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    setUserRole(role);
-  }, []);
+  const userRole = user?.claims?.role;
 
-  const totalItems = inventoryItems.reduce((sum, item) => sum + item.quantity, 0)
-  const lowStockItems = inventoryItems.filter(item => item.status === 'Low Stock').length
-  const inventoryValue = inventoryItems.reduce((sum, item) => sum + item.cost * item.quantity, 0)
-  const totalSales = 2856.50 // static value
-  const totalUsers = users.length;
+  const { totalItems, lowStockItems, inventoryValue, totalSalesValue, totalUsers, categoryBreakdown, topSellingItems } = useMemo(() => {
+    if (!inventoryItems || !sales || !users) {
+      return {
+        totalItems: 0,
+        lowStockItems: 0,
+        inventoryValue: 0,
+        totalSalesValue: 0,
+        totalUsers: 0,
+        categoryBreakdown: [],
+        topSellingItems: [],
+      };
+    }
+    
+    const totalItems = inventoryItems.reduce((sum, item) => sum + item.quantity, 0);
+    const lowStockItems = inventoryItems.filter(item => item.status === 'Low Stock').length;
+    const inventoryValue = inventoryItems.reduce((sum, item) => sum + item.cost * item.quantity, 0);
+    const totalSalesValue = sales.reduce((sum, sale) => sum + sale.total, 0);
+    const totalUsers = users.length;
+
+    const categoryCounts: { [key: string]: number } = {};
+    inventoryItems.forEach(item => {
+        categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
+    });
+
+    const categoryColors: { [key: string]: string } = {
+        'Fruits': 'var(--color-fruits)',
+        'Vegetables': 'var(--color-vegetables)',
+        'Dairy': 'var(--color-dairy)',
+        'Feed': 'var(--color-feed)',
+        'Supplies': 'var(--color-supplies)',
+        'Processed Goods': 'var(--color-processed-goods)',
+    }
+
+    const categoryBreakdown: PieChartData[] = Object.entries(categoryCounts).map(([name, value]) => ({
+        name,
+        value,
+        fill: categoryColors[name] || 'hsl(var(--muted-foreground))',
+    }));
+    
+    // This is a simplified version of top selling items based on sales records
+    const salesByItem: { [key: string]: { quantity: number; profit: number } } = {};
+    sales.forEach(sale => {
+        const item = inventoryItems.find(i => i.name === sale.itemName);
+        if (item) {
+            const profit = sale.total - (sale.quantity * item.cost);
+            if (!salesByItem[sale.itemName]) {
+                salesByItem[sale.itemName] = { quantity: 0, profit: 0 };
+            }
+            salesByItem[sale.itemName].quantity += sale.quantity;
+            salesByItem[sale.itemName].profit += profit;
+        }
+    });
+    const topSellingItems = Object.entries(salesByItem)
+        .sort((a, b) => b[1].profit - a[1].profit)
+        .slice(0, 4)
+        .map(([name, data]) => ({ name, ...data }));
+
+
+    return { totalItems, lowStockItems, inventoryValue, totalSalesValue, totalUsers, categoryBreakdown, topSellingItems };
+
+  }, [inventoryItems, sales, users]);
+
+  const loading = loadingInventory || loadingSales || loadingUsers;
 
   const isAdmin = userRole === 'Admin';
   const isManager = userRole === 'Manager';
@@ -35,11 +103,34 @@ export default function DashboardPage() {
   const statCards = [
     { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Across all items" },
     { title: "Low Stock Items", value: lowStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory?status=low", description: "Items below threshold" },
-    { title: "Total Sales", value: `₦${totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"], link: "/sales", description: "This month" },
+    { title: "Total Sales", value: `₦${totalSalesValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"], link: "/sales", description: "This month" },
     { title: "Total Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Sum of all quantities" },
     { title: "Total Users", value: totalUsers, icon: <Users />, roles: ["Admin"], link: "/users", description: "System-wide users" }
   ].filter(card => userRole && card.roles.includes(userRole));
 
+
+  if (loading) {
+      return (
+          <div className="flex flex-1 flex-col gap-4 md:gap-8">
+              <div className="flex items-center justify-between">
+                  <h1 className="font-semibold text-lg md:text-2xl">Dashboard</h1>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-36 w-full" />)}
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
+                  <div className="lg:col-span-2 grid gap-4">
+                      <Skeleton className="h-72 w-full" />
+                      <Skeleton className="h-72 w-full" />
+                  </div>
+                  <div className="lg:col-span-1 grid grid-cols-1 gap-4">
+                        <Skeleton className="h-48 w-full" />
+                        <Skeleton className="h-72 w-full" />
+                  </div>
+              </div>
+          </div>
+      )
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -93,7 +184,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 grid gap-4">
-          <RecentSales sales={sales.slice(0, 5)} />
+          <RecentSales sales={(sales || []).slice(0, 5)} />
           { (isAdmin || isManager) && <TopProductsTable items={topSellingItems} /> }
         </div>
          <div className="lg:col-span-1 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
@@ -129,7 +220,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <CategoryBreakdownChart />
+          <CategoryBreakdownChart data={categoryBreakdown} />
           
         </div>
       </div>

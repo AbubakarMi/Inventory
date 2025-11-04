@@ -11,6 +11,7 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
 } from 'firebase/firestore';
 
 const { firestore } = initializeFirebase();
@@ -23,11 +24,24 @@ export const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'status'
 
 export const updateInventoryItem = async (id: string, item: Partial<InventoryItem>) => {
   const itemRef = doc(firestore, 'inventory', id);
-  let finalUpdate = { ...item };
-  if (item.quantity !== undefined && item.threshold !== undefined) {
-    const status = item.quantity > item.threshold ? 'In Stock' : item.quantity > 0 ? 'Low Stock' : 'Out of Stock';
+  const finalUpdate = { ...item };
+
+  // Fetch the existing document to get properties that might not be in the update payload
+  const currentDoc = await getDoc(itemRef);
+  if (!currentDoc.exists()) {
+    throw new Error("Item not found");
+  }
+  const currentData = currentDoc.data() as InventoryItem;
+  
+  const newQuantity = item.quantity ?? currentData.quantity;
+  const newThreshold = item.threshold ?? currentData.threshold;
+
+  // Always recalculate status if quantity is part of the update
+  if (item.quantity !== undefined) {
+    const status = newQuantity > newThreshold ? 'In Stock' : newQuantity > 0 ? 'Low Stock' : 'Out of Stock';
     finalUpdate.status = status;
   }
+  
   return updateDoc(itemRef, finalUpdate);
 };
 

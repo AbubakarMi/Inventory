@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
-import { categoryBreakdownData } from "@/lib/data"
+import type { PieChartData } from "@/lib/types"
 import { Pie, PieChart, ResponsiveContainer, Label } from "recharts"
 
 const chartConfig = {
@@ -16,10 +16,14 @@ const chartConfig = {
   "processed goods": { label: "Processed Goods", color: "hsl(var(--destructive))" },
 }
 
-export function CategoryBreakdownChart() {
+type CategoryBreakdownChartProps = {
+    data: PieChartData[];
+}
+
+export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
   const totalValue = React.useMemo(() => {
-    return categoryBreakdownData.reduce((acc, curr) => acc + curr.value, 0)
-  }, [])
+    return data.reduce((acc, curr) => acc + curr.value, 0)
+  }, [data])
 
   return (
     <Card className="flex flex-col">
@@ -39,7 +43,7 @@ export function CategoryBreakdownChart() {
                 content={<ChartTooltipContent hideLabel />}
               />
               <Pie
-                data={categoryBreakdownData}
+                data={data}
                 dataKey="value"
                 nameKey="name"
                 innerRadius={60}
