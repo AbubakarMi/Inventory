@@ -1,10 +1,11 @@
+
 "use client"
 
 import * as React from "react"
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
-import { columns } from "@/components/inventory/columns"
+import { getColumns } from "@/components/inventory/columns"
 import { ItemModal } from "@/components/inventory/item-modal"
 import { Input } from "@/components/ui/input"
 import { Search, PackageSearch } from "lucide-react"
@@ -37,6 +38,8 @@ export default function InventoryPage() {
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
   }, [inventoryItems, searchTerm, selectedCategory]);
+
+  const columns = useMemo(() => getColumns({ categories: categories || [] }), [categories]);
 
   if (loadingItems || loadingCategories) {
     return (
