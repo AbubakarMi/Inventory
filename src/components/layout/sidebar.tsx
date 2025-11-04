@@ -48,9 +48,9 @@ export default function AppSidebar() {
   const userRole = claims?.role;
 
   const navItems = React.useMemo(() => {
-    if (!userRole) return [];
     // Admin sees everything, no filtering needed.
     if (userRole === 'Admin') return allNavItems;
+    if (!userRole) return [];
     // For other roles, filter based on their allowed roles.
     return allNavItems.filter(item => item.roles.includes(userRole));
   }, [userRole]);

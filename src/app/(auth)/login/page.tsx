@@ -85,9 +85,6 @@ export default function LoginPage() {
             const result = await response.json();
             throw new Error(result.error || "Failed to set admin role.");
           }
-
-          // Force refresh the token to get the new custom claim
-          await newUser.getIdToken(true);
           
           toast({ title: "Admin user created & role assigned!", description: "Logging you in..." });
           
