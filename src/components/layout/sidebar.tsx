@@ -49,7 +49,9 @@ export default function AppSidebar() {
 
   const navItems = React.useMemo(() => {
     // Admin sees everything. This is the highest priority check.
-    if (userRole === 'Admin') return allNavItems;
+    if (userRole === 'Admin') {
+      return allNavItems;
+    }
     
     if (!userRole) return [];
 
