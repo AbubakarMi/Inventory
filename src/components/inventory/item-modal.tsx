@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -53,6 +54,8 @@ type ItemFormValues = z.infer<typeof itemSchema>;
 export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
   const title = itemToEdit ? "Edit Item" : "Add New Item";
   const description = itemToEdit ? "Update the details of your inventory item." : "Fill in the details to add a new item to your inventory.";
 
@@ -80,6 +83,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
   }, [isOpen, itemToEdit, form]);
 
   async function onSubmit(values: ItemFormValues) {
+    setIsSubmitting(true);
     try {
       if (itemToEdit?.id) {
         await updateInventoryItem(itemToEdit.id, values);
@@ -91,13 +95,15 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
         description: `Item "${values.name}" has been ${itemToEdit ? 'updated' : 'added'}.`,
       })
       setIsOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save item:", error);
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
-        description: "There was a problem with your request.",
+        description: error.message || "There was a problem with your request.",
       })
+    } finally {
+        setIsSubmitting(false);
     }
   }
 
@@ -122,7 +128,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                 <FormItem className="grid grid-cols-4 items-center gap-4">
                   <FormLabel className="text-right">Name</FormLabel>
                   <FormControl>
-                    <Input {...field} className="col-span-3" />
+                    <Input {...field} className="col-span-3" disabled={isSubmitting} />
                   </FormControl>
                   <FormMessage className="col-span-4 text-right" />
                 </FormItem>
@@ -134,7 +140,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-4">
                   <FormLabel className="text-right">Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                     <FormControl>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a category" />
@@ -158,7 +164,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                     <FormItem>
                         <FormLabel>Quantity</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" {...field} disabled={isSubmitting} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -171,7 +177,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                     <FormItem>
                         <FormLabel>Unit (e.g. kg, lbs)</FormLabel>
                         <FormControl>
-                            <Input {...field} />
+                            <Input {...field} disabled={isSubmitting} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -186,7 +192,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                     <FormItem>
                         <FormLabel>Cost Price</FormLabel>
                         <FormControl>
-                            <Input type="number" step="0.01" {...field} />
+                            <Input type="number" step="0.01" {...field} disabled={isSubmitting} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -199,7 +205,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                     <FormItem>
                         <FormLabel>Selling Price</FormLabel>
                         <FormControl>
-                            <Input type="number" step="0.01" {...field} />
+                            <Input type="number" step="0.01" {...field} disabled={isSubmitting} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -213,7 +219,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                 <FormItem>
                   <FormLabel>Expiry Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" {...field} disabled={isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -226,7 +232,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                 <FormItem>
                   <FormLabel>Supplier (Optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} disabled={isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -239,7 +245,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                 <FormItem>
                   <FormLabel>Low Stock Threshold</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input type="number" {...field} disabled={isSubmitting} />
                   </FormControl>
                    <FormDescription>
                     Receive a notification when stock drops to this level.
@@ -250,9 +256,11 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
             />
             <DialogFooter>
                 <DialogClose asChild>
-                    <Button variant="outline" type="button">Cancel</Button>
+                    <Button variant="outline" type="button" disabled={isSubmitting}>Cancel</Button>
                 </DialogClose>
-                <Button type="submit">Save changes</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : "Save changes"}
+                </Button>
             </DialogFooter>
           </form>
         </Form>
