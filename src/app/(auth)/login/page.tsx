@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import { setDoc, doc } from "firebase/firestore"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tractor } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/firebase"
+import { useAuth, useFirestore } from "@/firebase"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -24,6 +25,7 @@ const loginSchema = z.object({
 export default function LoginPage() {
   const router = useRouter()
   const auth = useAuth()
+  const firestore = useFirestore()
   const { toast } = useToast()
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -49,7 +51,7 @@ export default function LoginPage() {
   }
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    if (!auth) {
+    if (!auth || !firestore) {
       toast({
         variant: "destructive",
         title: "Auth not initialized",
@@ -94,7 +96,7 @@ export default function LoginPage() {
            toast({
             variant: "destructive",
             title: "Admin Creation Failed",
-            description: creationError.message || "An unexpected error occurred.",
+            description: creationError.message || "An unexpected error occurred during admin creation.",
           });
         }
         return;
