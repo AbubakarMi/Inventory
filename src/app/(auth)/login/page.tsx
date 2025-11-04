@@ -63,7 +63,7 @@ export default function LoginPage() {
     } catch (error: any) {
       // ONE-TIME ADMIN CREATION LOGIC
       if (
-        (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') &&
+        (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/configuration-not-found') &&
         values.email === 'admin@gmail.com' &&
         values.password === 'Password123'
       ) {
