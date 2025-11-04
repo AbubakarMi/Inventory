@@ -36,10 +36,17 @@ export async function POST(request: Request) {
     const json = await request.json();
     const data = userSchema.parse(json);
 
+    let userRole = data.role;
+
     // Check if this is the first user. If so, they become admin.
     const userList = await admin.auth().listUsers(1);
     const isFirstUser = userList.users.length === 0;
-    const userRole = isFirstUser ? 'Admin' : data.role;
+    
+    // Hardcode the admin role for the specific email, or if it's the first user
+    if (isFirstUser || data.email === 'admin@gmail.com') {
+      userRole = 'Admin';
+    }
+
 
     // If not the first user, verify the request is from an admin
     if (!isFirstUser) {
