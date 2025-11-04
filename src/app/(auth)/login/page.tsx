@@ -74,7 +74,7 @@ export default function LoginPage() {
           const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
           const newUser = userCredential.user;
 
-          // 2. Call a special API route to set the admin role claim
+          // 2. Call a special API route to set the admin role claim and WAIT for it to complete.
           const response = await fetch('/api/set-admin-role', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
