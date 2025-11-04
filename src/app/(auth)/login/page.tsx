@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { signInWithEmailAndPassword } from "firebase/auth"
+import React from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,6 +34,11 @@ export default function LoginPage() {
     },
   })
 
+  // Silently ensure the admin user exists when the page loads.
+  React.useEffect(() => {
+    fetch('/api/ensure-admin').catch(console.error);
+  }, []);
+
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     if (!auth) {
       toast({
@@ -46,7 +52,7 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       
-      // Force a token refresh to get latest claims after login.
+      // Force a token refresh to get latest claims after login. This is crucial.
       await userCredential.user.getIdToken(true);
 
       toast({
@@ -59,7 +65,7 @@ export default function LoginPage() {
     } catch (error: any) {
       let description = "An unexpected error occurred. Please try again.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        description = "Invalid credentials. Please check your email and password, or create an account if this is your first time.";
+        description = "Invalid credentials. Please check your email and password.";
       } else if (error.code === 'auth/too-many-requests') {
         description = "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later."
       }
@@ -79,7 +85,7 @@ export default function LoginPage() {
             <Tractor className="h-8 w-8 text-primary" />
             <CardTitle className="text-3xl font-bold">FarmSight</CardTitle>
           </div>
-          <CardDescription>Enter your email below to login to your account. If you are the first user, please go to the /users page to create the initial admin account.</CardDescription>
+          <CardDescription>Enter your email below to login to your account. The default admin is admin@gmail.com with password Password123</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -123,10 +129,7 @@ export default function LoginPage() {
                 {form.formState.isSubmitting ? "Logging in..." : "Login"}
               </Button>
                <div className="mt-4 text-center text-sm">
-                First time here?{" "}
-                <Link href="/users" className="underline">
-                  Create the first Admin account
-                </Link>
+                First time here? The admin account is created automatically.
               </div>
             </form>
           </Form>
