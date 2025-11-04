@@ -27,30 +27,35 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                 // If not on the login page, redirect there.
                 // Exception: allow access to /users page if no users exist, which allows first user creation.
                 if (pathname !== '/login') {
+                    // This logic allows the very first user to be created.
                     if (pathname === '/users') {
                         try {
                             const usersSnapshot = await getDocs(collection(firestore, "users"));
                             if (usersSnapshot.empty) {
-                                setIsVerifying(false);
-                                return; // Allow access
+                                setIsVerifying(false); // Allow access to create first user
+                                return;
                             }
                         } catch(e) {
-                            // If collection doesn't exist, it's the first run
-                             setIsVerifying(false);
-                            return; // Allow access
+                             // This can happen if firestore rules are not set up, but in our case,
+                             // it implies a first run scenario.
+                             setIsVerifying(false); // Allow access
+                             return;
                         }
                     }
+                    // For all other pages, redirect to login if no user.
                     router.push('/login');
                 } else {
+                     // If we are already on the login page, we are done verifying.
                      setIsVerifying(false);
                 }
             } else {
-                // User is logged in. The useUser hook will handle claims.
-                // We can stop verifying now.
+                // User is logged in. The useUser hook will handle claims and role loading.
+                // We can stop the initial verification.
                 setIsVerifying(false);
             }
         });
 
+        // Cleanup subscription on unmount
         return () => unsubscribe();
     }
   }, [pathname, router]);
@@ -91,13 +96,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // If we are on the login page and the user is already authenticated, redirect to dashboard
   if (user && pathname === '/login') {
     router.push('/dashboard');
-    return <div>Redirecting...</div>;
+    return null; // Render nothing while redirecting
   }
 
   // If we are not loading and there's no user, and we're not on the login page, it's a state that should have been caught by the useEffect.
   // This can act as a fallback, but the redirect in useEffect is primary.
-  if (!user && pathname !== '/login') {
-    return <div>Redirecting to login...</div>
+  if (!user && pathname !== '/login' && pathname !== '/users') {
+    // The useEffect should have already redirected. This is a safeguard.
+    return null;
   }
 
   return <>{children}</>;
