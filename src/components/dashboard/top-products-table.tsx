@@ -58,3 +58,5 @@ export function TopProductsTable({ items }: TopProductsTableProps) {
     </Card>
   )
 }
+
+    
