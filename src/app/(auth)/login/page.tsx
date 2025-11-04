@@ -81,8 +81,8 @@ export default function LoginPage() {
             })
           });
 
-          const result = await response.json();
           if (!response.ok) {
+            const result = await response.json();
             throw new Error(result.error || "Failed to create admin user.");
           }
           
