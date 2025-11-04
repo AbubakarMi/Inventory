@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import { signInWithEmailAndPassword } from "firebase/auth"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,21 +33,6 @@ export default function LoginPage() {
     },
   })
 
-  async function attemptLogin(values: z.infer<typeof loginSchema>) {
-    if (!auth) throw new Error("Auth not initialized");
-    const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-    
-    // Force a token refresh to get latest claims after login.
-    await userCredential.user.getIdToken(true);
-
-    toast({
-      title: "Login Successful",
-      description: `Welcome back!`,
-    });
-
-    router.push("/dashboard");
-  }
-
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     if (!auth) {
       toast({
@@ -59,54 +44,24 @@ export default function LoginPage() {
     }
 
     try {
-      await attemptLogin(values);
-    } catch (error: any) {
-      // ONE-TIME ADMIN CREATION LOGIC
-      if (
-        (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') &&
-        values.email === 'admin@gmail.com' &&
-        values.password === 'Password123'
-      ) {
-        try {
-          toast({ title: "Admin user not found.", description: "Attempting to create it now..." });
-          
-          // 1. Create the user directly on the client to get a UID
-          const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-          const newUser = userCredential.user;
-
-          // 2. Call a special API route to set the admin role claim and WAIT for it to complete.
-          const response = await fetch('/api/set-admin-role', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid: newUser.uid, email: newUser.email, name: 'Admin' })
-          });
-
-          if (!response.ok) {
-            const result = await response.json();
-            throw new Error(result.error || "Failed to set admin role.");
-          }
-          
-          toast({ title: "Admin user created & role assigned!", description: "Logging you in..." });
-          
-          // 3. Retry login, which will now succeed and redirect
-          await attemptLogin(values);
-
-        } catch (creationError: any) {
-           toast({
-            variant: "destructive",
-            title: "Admin Creation Failed",
-            description: creationError.message || "An unexpected error occurred during admin creation.",
-          });
-        }
-        return;
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       
-      // Standard error handling
+      // Force a token refresh to get latest claims after login.
+      await userCredential.user.getIdToken(true);
+
+      toast({
+        title: "Login Successful",
+        description: `Welcome back!`,
+      });
+
+      router.push("/dashboard");
+
+    } catch (error: any) {
       let description = "An unexpected error occurred. Please try again.";
-      if (error.code === 'auth/configuration-not-found') {
-        description = "Authentication is not configured for this project. Please enable Email/Password sign-in in your Firebase console.";
-      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        description = "Invalid credentials. Please check your email and password.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = "Invalid credentials. Please check your email and password, or create an account if this is your first time.";
+      } else if (error.code === 'auth/too-many-requests') {
+        description = "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later."
       }
       toast({
         variant: "destructive",
@@ -124,7 +79,7 @@ export default function LoginPage() {
             <Tractor className="h-8 w-8 text-primary" />
             <CardTitle className="text-3xl font-bold">FarmSight</CardTitle>
           </div>
-          <CardDescription>Enter your email below to login to your account</CardDescription>
+          <CardDescription>Enter your email below to login to your account. If you are the first user, please go to the /users page to create the initial admin account.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -167,6 +122,12 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Logging in..." : "Login"}
               </Button>
+               <div className="mt-4 text-center text-sm">
+                First time here?{" "}
+                <Link href="/users" className="underline">
+                  Create the first Admin account
+                </Link>
+              </div>
             </form>
           </Form>
         </CardContent>
