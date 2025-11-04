@@ -1,57 +1,33 @@
-
 'use client';
 
 import { useUser } from '@/firebase';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { SidebarProvider } from "@/components/ui/sidebar";
+import Header from "@/components/layout/header";
+import AppSidebar from "@/components/layout/sidebar";
 import { Skeleton } from '@/components/ui/skeleton';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { initializeFirebase } from '..';
-import { getDocs, collection } from 'firebase/firestore';
 
-
-export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, claims, loading: useUserLoading } = useUser();
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, claims, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
-  
-  // This state tracks the initial, hard auth check on page load.
-  const [isVerifying, setIsVerifying] = useState(true);
 
   useEffect(() => {
-    // Only run this on the client
-    if (typeof window !== 'undefined') {
-        const { auth, firestore } = initializeFirebase();
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-            if (!firebaseUser) {
-                // If not on the login page, redirect there.
-                if (pathname !== '/login') {
-                    router.push('/login');
-                } else {
-                     // If we are already on the login page, we are done verifying.
-                     setIsVerifying(false);
-                }
-            } else {
-                // User is logged in via Firebase Auth state.
-                // The `useUser` hook will handle loading claims.
-                // We can stop the initial high-level verification.
-                setIsVerifying(false);
-            }
-        });
-
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
+    // If loading is finished and there's no user, redirect to login.
+    if (!loading && !user) {
+      router.push('/login');
     }
-  }, [pathname, router]);
-
-  // We are in a loading state if:
-  // 1. The initial onAuthStateChanged check is running (isVerifying).
-  // 2. The useUser hook is still fetching the user object or claims.
-  // 3. We have a user object but are still waiting for their custom claims to load. This is CRITICAL.
-  const isLoading = isVerifying || useUserLoading || (user && !claims);
+  }, [user, loading, router]);
   
-  if (isLoading) {
-    return (
+  // While checking auth state, show a loading skeleton.
+  // Also wait for claims to be loaded to prevent role-based UI flicker.
+  if (loading || (user && !claims)) {
+     return (
         <div className="flex h-screen w-full bg-background">
             <div className="hidden sm:flex flex-col border-r p-2 gap-2 h-full w-[16rem]">
                 <div className="flex items-center justify-between p-2">
@@ -92,18 +68,24 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // If we are on the login page and the user is already authenticated, redirect to dashboard
-  if (user && pathname === '/login') {
-    router.push('/dashboard');
-    return null; // Render nothing while redirecting
-  }
-  
-  // After all loading is done, if we still have no user and are on a protected page, redirect.
-  // This is a final safeguard. The useEffect handles the primary redirect logic.
-  if (!user && pathname !== '/login') {
-      router.push('/login');
-      return null;
+  // If there's a user, render the main app layout.
+  if (user) {
+      return (
+        <SidebarProvider>
+            <div className="flex h-screen w-full">
+            <AppSidebar />
+            <div className="flex flex-1 flex-col overflow-hidden">
+                <Header />
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
+                {children}
+                </main>
+            </div>
+            </div>
+        </SidebarProvider>
+      );
   }
 
-  return <>{children}</>;
+  // If no user and not loading, it means we're about to redirect.
+  // Render null to avoid a flash of un-styled content.
+  return null;
 }

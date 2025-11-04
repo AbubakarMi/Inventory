@@ -1,54 +1,91 @@
-import { NextResponse } from 'next/server';
-import db from '@/lib/firebase-admin';
-import { z } from 'zod';
+'use client';
 
-const supplierUpdateSchema = z.object({
-  name: z.string().min(1).optional(),
-  contact: z.string().min(1).optional(),
-  products: z.array(z.string()).optional(),
-  rating: z.number().min(0).max(5).optional(),
-});
+import { useUser } from '@/firebase';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { SidebarProvider } from "@/components/ui/sidebar";
+import Header from "@/components/layout/header";
+import AppSidebar from "@/components/layout/sidebar";
+import { Skeleton } from '@/components/ui/skeleton';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  try {
-    const id = params.id;
-    const docRef = db.collection('suppliers').doc(id);
-    const doc = await docRef.get();
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, claims, loading } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
 
-    if (!doc.exists) {
-      return NextResponse.json({ error: 'Supplier not found' }, { status: 404 });
+  useEffect(() => {
+    // If loading is finished and there's no user, redirect to login.
+    if (!loading && !user) {
+      router.push('/login');
     }
-
-    return NextResponse.json({ id: doc.id, ...doc.data() });
-  } catch (error) {
-    console.error(`Error fetching supplier ${params.id}:`, error);
-    return NextResponse.json({ error: 'Failed to fetch supplier' }, { status: 500 });
+  }, [user, loading, router]);
+  
+  // While checking auth state, show a loading skeleton.
+  // Also wait for claims to be loaded to prevent role-based UI flicker.
+  if (loading || (user && !claims)) {
+     return (
+        <div className="flex h-screen w-full bg-background">
+            <div className="hidden sm:flex flex-col border-r p-2 gap-2 h-full w-[16rem]">
+                <div className="flex items-center justify-between p-2">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-8 w-8" />
+                </div>
+                <div className="flex flex-col gap-2 p-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <Skeleton className="h-10 w-full mt-auto" />
+            </div>
+            <div className="flex flex-col flex-1">
+                 <div className="flex h-14 items-center border-b px-6">
+                    <Skeleton className="h-8 w-8 sm:hidden" />
+                    <Skeleton className="h-6 w-32 hidden md:block" />
+                    <div className="ml-auto flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-8 w-8" />
+                    </div>
+                </div>
+                <div className="flex-1 p-6">
+                    <Skeleton className="h-8 w-48 mb-6" />
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                    </div>
+                    <div className="mt-6">
+                        <Skeleton className="h-96 w-full" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
   }
-}
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    try {
-        const id = params.id;
-        const json = await request.json();
-        const data = supplierUpdateSchema.parse(json);
-        await db.collection('suppliers').doc(id).update(data);
-        return NextResponse.json({ id, ...data });
-    } catch (error) {
-        console.error(`Error updating supplier ${params.id}:`, error);
-        if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: 'Invalid data provided', details: error.errors }, { status: 400 });
-        }
-        return NextResponse.json({ error: 'Failed to update supplier' }, { status: 500 });
-    }
-}
+  // If there's a user, render the main app layout.
+  if (user) {
+      return (
+        <SidebarProvider>
+            <div className="flex h-screen w-full">
+            <AppSidebar />
+            <div className="flex flex-1 flex-col overflow-hidden">
+                <Header />
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
+                {children}
+                </main>
+            </div>
+            </div>
+        </SidebarProvider>
+      );
+  }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    try {
-        const id = params.id;
-        await db.collection('suppliers').doc(id).delete();
-        return new NextResponse(null, { status: 204 });
-    } catch (error) {
-        console.error(`Error deleting supplier ${params.id}:`, error);
-        return NextResponse.json({ error: 'Failed to delete supplier' }, { status: 500 });
-    }
+  // If no user and not loading, it means we're about to redirect.
+  // Render null to avoid a flash of un-styled content.
+  return null;
 }

@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const isAdmin = userRole === 'Admin';
   const isManager = userRole === 'Manager';
 
+  const isLoading = inventoryLoading || salesLoading || usersLoading || categoriesLoading;
 
   const statCards = [
     { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager"], link: "/inventory", description: "Across all items" },
@@ -59,6 +60,10 @@ export default function DashboardPage() {
     { title: "Total Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Sum of all quantities" },
     { title: "Total Users", value: totalUsers, icon: <Users />, roles: ["Admin"], link: "/users", description: "System-wide users" }
   ].filter(card => userRole && card.roles.includes(userRole));
+  
+  if (isLoading) {
+    return <div>Loading Dashboard...</div>
+  }
 
 
   return (
