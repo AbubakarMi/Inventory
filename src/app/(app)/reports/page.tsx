@@ -1,14 +1,18 @@
 
 "use client"
 
+import { useMemo } from "react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { dailyTrendsData, sales, inventoryItems } from "@/lib/data"
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts"
+import { initializeFirebase, useCollection } from "@/firebase";
+import { collection, query } from "firebase/firestore";
+import type { Sale, InventoryItem, ChartData } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const chartConfig = {
   value: { 
@@ -18,24 +22,105 @@ const chartConfig = {
 }
 
 export default function ReportsPage() {
+    const { firestore } = initializeFirebase();
 
-    const totalRevenue = sales
-        .filter(sale => sale.type === 'Sale')
-        .reduce((sum, sale) => sum + sale.total, 0);
-
-    const costOfGoodsSold = sales
-        .filter(sale => sale.type === 'Sale')
-        .reduce((sum, sale) => {
-            const item = inventoryItems.find(i => i.name === sale.itemName);
-            return sum + (item ? item.cost * sale.quantity : 0);
-        }, 0);
-
-    const netProfit = totalRevenue - costOfGoodsSold;
+    const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales')) : null, [firestore]);
+    const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
     
-    // For the chart, we'll continue using the mock daily trends data as an example,
-    // since the sales data doesn't have enough daily granularity for a trend chart.
-    const salesChartData = dailyTrendsData;
+    const { data: sales, loading: loadingSales } = useCollection<Sale>(salesQuery);
+    const { data: inventoryItems, loading: loadingInventory } = useCollection<InventoryItem>(inventoryQuery);
 
+    const { totalRevenue, costOfGoodsSold, netProfit, salesChartData } = useMemo(() => {
+        if (!sales || !inventoryItems) {
+            return {
+                totalRevenue: 0,
+                costOfGoodsSold: 0,
+                netProfit: 0,
+                salesChartData: []
+            };
+        }
+
+        const totalRevenue = sales
+            .filter(sale => sale.type === 'Sale')
+            .reduce((sum, sale) => sum + sale.total, 0);
+
+        const costOfGoodsSold = sales
+            .filter(sale => sale.type === 'Sale')
+            .reduce((sum, sale) => {
+                const item = inventoryItems.find(i => i.name === sale.itemName);
+                return sum + (item ? item.cost * sale.quantity : 0);
+            }, 0);
+
+        const netProfit = totalRevenue - costOfGoodsSold;
+
+        // Group sales by date for the chart
+        const dailyTrends: { [date: string]: number } = {};
+        sales.forEach(sale => {
+            const date = new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (!dailyTrends[date]) {
+                dailyTrends[date] = 0;
+            }
+            dailyTrends[date] += sale.total;
+        });
+
+        const salesChartData: ChartData[] = Object.entries(dailyTrends)
+            .map(([date, value]) => ({ date, value }))
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+
+        return { totalRevenue, costOfGoodsSold, netProfit, salesChartData };
+
+    }, [sales, inventoryItems]);
+
+    const loading = loadingSales || loadingInventory;
+
+    if (loading) {
+        return (
+            <div className="flex flex-1 flex-col gap-4 md:gap-8">
+                <div className="flex items-center justify-between">
+                    <h1 className="font-semibold text-lg md:text-2xl">Reports</h1>
+                     <div className="flex items-center gap-2">
+                        <Skeleton className="h-10 w-[300px]" />
+                        <Skeleton className="h-10 w-32" />
+                        <Skeleton className="h-10 w-32" />
+                    </div>
+                </div>
+                 <div className="grid gap-4 md:gap-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Profit/Loss Summary</CardTitle>
+                            <CardDescription>Financial summary based on the selected date range.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 md:grid-cols-3">
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Sales Trend</CardTitle>
+                            <CardDescription>A summary of sales within the selected date range.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <Skeleton className="h-[300px] w-full" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Inventory Report</CardTitle>
+                            <CardDescription>Current stock levels and values.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <div className="p-4"><Skeleton className="h-8 w-full" /></div>
+                             <div className="p-4"><Skeleton className="h-8 w-full" /></div>
+                             <div className="p-4"><Skeleton className="h-8 w-full" /></div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
@@ -121,7 +206,7 @@ export default function ReportsPage() {
                                 </TableRow>
                             </TableHeader>
                              <TableBody>
-                                {inventoryItems.map(item => (
+                                {inventoryItems?.map(item => (
                                      <TableRow key={item.id}>
                                         <TableCell>{item.name}</TableCell>
                                         <TableCell>{item.category}</TableCell>
@@ -137,3 +222,5 @@ export default function ReportsPage() {
         </div>
     );
 }
+
+    
