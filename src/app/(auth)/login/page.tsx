@@ -89,7 +89,7 @@ export default function LoginPage() {
             <Tractor className="h-8 w-8 text-primary" />
             <CardTitle className="text-3xl font-bold">FarmSight</CardTitle>
           </div>
-          <CardDescription>Enter your email below to login to your account. First time here? Navigate to the <Link href="/users" className="underline">Users page</Link> to create the admin account.</CardDescription>
+          <CardDescription>Enter your email below to login to your account. First time here? The admin account will be created automatically.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
