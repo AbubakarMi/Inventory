@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
 import type { User } from "@/lib/types"
-import { addUser } from "@/firebase/services/users";
+import { updateUser } from "@/firebase/services/users";
+// NOTE: We don't import addUser because that requires a server-side flow for security.
 
 type UserModalProps = {
   children: React.ReactNode;
@@ -60,7 +61,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const title = userToEdit ? "Edit User" : "Add New User";
-    const description = userToEdit ? "Update the user's details." : "Enter the user's details to grant them access.";
+    const description = userToEdit ? "Update the user's details." : "To add a user, use your Firebase console for security. This form is for editing existing users.";
 
     // Adjust schema for editing - password is not required
     const editUserSchema = userSchema.extend({
@@ -91,24 +92,30 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
     }, [userToEdit, form, isOpen]);
 
     async function onSubmit(values: z.infer<typeof userSchema>) {
-        if (!userToEdit && !values.password) {
-            form.setError("password", { type: "manual", message: "Password is required for new users." });
+        if (!userToEdit) {
+            toast({
+                variant: "destructive",
+                title: "Not Implemented",
+                description: "User creation must be done via a secure backend process. This form is for edits only.",
+            })
             return;
         }
 
         setIsSubmitting(true);
         try {
             if (userToEdit?.id) {
-                // await updateUser(userToEdit.id, values); // updateUser service function needed
-                console.log("Updating user (logic to be implemented)", values)
-            } else {
-                await addUser(values as any);
+                // We only need to send fields that can be changed.
+                // Password changes would require a separate, more secure flow.
+                await updateUser(userToEdit.id, {
+                    name: values.name,
+                    role: values.role
+                });
+                toast({
+                    title: "Success!",
+                    description: `User "${values.name}" has been updated.`,
+                });
+                setIsOpen(false);
             }
-            toast({
-                title: "Success!",
-                description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
-            });
-            setIsOpen(false);
         } catch (error: any) {
              toast({
                 variant: "destructive",
@@ -155,7 +162,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                                <Input type="email" {...field} disabled={isSubmitting || !!userToEdit} />
+                                <Input type="email" {...field} disabled={true} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -184,37 +191,14 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                                <Input type="password" {...field} placeholder={userToEdit ? "Leave blank to keep current password" : ""} disabled={isSubmitting} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Confirm Password</FormLabel>
-                            <FormControl>
-                                <Input type="password" {...field} disabled={isSubmitting}/>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                 {userToEdit && (
+                    <p className="text-sm text-muted-foreground pt-2">Password can be changed by the user in their settings.</p>
+                 )}
                 <DialogFooter>
                     <DialogClose asChild>
                         <Button type="button" variant="outline" disabled={isSubmitting}>Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting || !userToEdit}>
                         {isSubmitting ? "Saving..." : "Save Changes"}
                     </Button>
                 </DialogFooter>

@@ -5,18 +5,22 @@ import * as React from "react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
-import { columns } from "@/components/suppliers/columns";
+import { getColumns } from "@/components/suppliers/columns";
 import { SupplierModal } from "@/components/suppliers/supplier-modal";
 import { initializeFirebase, useCollection } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import type { Supplier } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Truck } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SuppliersPage() {
     const { firestore } = initializeFirebase();
+    const { toast } = useToast();
     const suppliersQuery = useMemo(() => firestore ? query(collection(firestore, 'suppliers')) : null, [firestore]);
     const { data: suppliers, loading } = useCollection<Supplier>(suppliersQuery);
+    const columns = useMemo(() => getColumns(toast), [toast]);
+
 
     if (loading) {
         return (

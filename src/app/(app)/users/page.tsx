@@ -5,18 +5,22 @@ import * as React from "react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
-import { columns } from "@/components/users/columns";
+import { getColumns } from "@/components/users/columns";
 import { UserModal } from "@/components/users/user-modal";
 import { initializeFirebase, useCollection } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import type { User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function UsersPage() {
     const { firestore } = initializeFirebase();
+    const { toast } = useToast();
     const usersQuery = useMemo(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
     const { data: users, loading } = useCollection<User>(usersQuery);
+    const columns = useMemo(() => getColumns(toast), [toast]);
+
 
     if (loading) {
         return (

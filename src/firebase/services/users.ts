@@ -2,7 +2,7 @@
 'use client';
 import { initializeFirebase } from '@/firebase';
 import type { User } from '@/lib/types';
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 // NOTE: User creation via email/password should be handled by a server-side function (e.g., a Genkit flow)
 // for security reasons, as it requires admin privileges to create users without them being logged in.
 // This client-side service is for creating the user document in Firestore after the auth user is created.
@@ -20,6 +20,19 @@ export const addUser = async (user: Omit<User, 'id' | 'status'> & { id: string }
         status: 'Active' // New users are active by default
     });
 };
+
+export const updateUser = async (id: string, user: Partial<User>) => {
+    const userRef = doc(firestore, 'users', id);
+    return updateDoc(userRef, user);
+}
+
+export const deleteUser = async (id: string) => {
+    const userRef = doc(firestore, 'users', id);
+    // This only deletes the Firestore document.
+    // The actual Firebase Auth user must be deleted separately, typically from a backend.
+    return deleteDoc(userRef);
+}
+
 
 // A proper implementation for creating a user would look like this, using a Genkit flow:
 /*

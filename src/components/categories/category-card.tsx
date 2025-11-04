@@ -9,12 +9,34 @@ import type { EnrichedCategory } from "@/lib/types";
 import { CategoryModal } from "./category-modal";
 import { Separator } from "../ui/separator";
 import { ActionConfirmationDialog } from "../action-confirmation-dialog";
+import { deleteCategory } from "@/firebase/services/categories";
+import { useToast } from "@/hooks/use-toast";
 
 type CategoryCardProps = {
     category: EnrichedCategory;
 }
 
 export function CategoryCard({ category }: CategoryCardProps) {
+    const { toast } = useToast();
+
+    const handleDelete = async () => {
+        if (!category.id) return;
+        try {
+            await deleteCategory(category.id);
+            toast({
+                title: "Success!",
+                description: `Category "${category.name}" has been deleted.`,
+            });
+        } catch (error) {
+            console.error("Error deleting category:", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not delete the category. Please try again.",
+            });
+        }
+    };
+    
     return (
         <Card className="hover:shadow-md transition-shadow flex flex-col">
             <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -40,7 +62,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
                         <ActionConfirmationDialog
                             title="Are you absolutely sure?"
                             description={`This will delete the "${category.name}" category. This action cannot be undone.`}
-                            onConfirm={() => console.log(`Deleting ${category.name}`)}
+                            onConfirm={handleDelete}
                             variant="destructive"
                         >
                             <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">

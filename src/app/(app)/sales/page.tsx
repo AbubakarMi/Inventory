@@ -5,16 +5,20 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from "@/components/data-table";
-import { columns } from "@/components/sales/columns";
+import { getColumns } from "@/components/sales/columns";
 import { TransactionModal } from "@/components/sales/transaction-modal";
 import { initializeFirebase, useCollection } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import type { Sale } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileWarning } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SalesPage() {
     const { firestore } = initializeFirebase();
+    const { toast } = useToast();
+    const columns = React.useMemo(() => getColumns(toast), [toast]);
+
 
     const salesQuery = React.useMemo(() => 
         firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Sale')) : null
