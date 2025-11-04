@@ -1,14 +1,22 @@
 
+"use client";
 
+import * as React from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Header from "@/components/layout/header";
 import AppSidebar from "@/components/layout/sidebar";
+import { seedDatabase } from "@/firebase/seeder";
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  React.useEffect(() => {
+    // This will run once on component mount to seed the database if it's empty.
+    seedDatabase();
+  }, []);
   
   return (
     <SidebarProvider>
