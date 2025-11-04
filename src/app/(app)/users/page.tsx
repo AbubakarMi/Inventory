@@ -34,7 +34,7 @@ export default function UsersPage() {
         checkUsers();
     }, [firestore]);
 
-    // Filter out the current user from the list
+    // Filter out the current user from the list, so they can't edit themselves here.
     const users = useMemo(() => {
         if (!usersData || !currentUser) return usersData || [];
         return usersData.filter(user => user.id !== currentUser.uid);
@@ -42,18 +42,13 @@ export default function UsersPage() {
     
     // An admin can always add a user. Also, allow adding if there are no users yet.
     const canAddUser = claims?.role === 'Admin' || isFirstUser;
-
+    
     if (loading) {
         return <div>Loading...</div>
     }
     
-    // This is a special case for the very first user creation flow.
-    // If there is no current user and it's not the first user setup, redirect.
-    if (!isFirstUser && !currentUser) {
-        router.push('/login');
-        return <div>Redirecting to login...</div>;
-    }
-
+    // This logic is now handled by the AuthGuard.
+    // If not first user and no current user, guard will redirect to login.
 
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">

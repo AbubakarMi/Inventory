@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const json = await request.json();
     const data = userSchema.parse(json);
 
-    // Check if this is the first user being created.
+    // Check if this is the first user being created by checking the total user count.
     const userList = await admin.auth().listUsers(1).catch(() => ({users: []}));
     const isFirstUser = userList.users.length === 0;
     
@@ -76,6 +76,15 @@ export async function POST(request: Request) {
       status: 'Active',
     };
     await db.collection('users').doc(userRecord.uid).set(userDocData);
+
+    // Invalidate the user's token so they get the new claim on next login
+    // This is good practice but the client-side token refresh is more direct.
+    try {
+      await admin.auth().revokeRefreshTokens(userRecord.uid);
+    } catch (e) {
+        console.warn(`Could not revoke refresh tokens for ${userRecord.uid}`, e);
+    }
+
 
     return NextResponse.json({ id: userRecord.uid, ...userDocData }, { status: 201 });
 

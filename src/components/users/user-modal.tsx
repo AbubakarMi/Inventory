@@ -71,6 +71,8 @@ export function UserModal({ children }: { children: React.ReactNode }) {
       const user = auth?.currentUser;
       const token = user ? await user.getIdToken() : null;
 
+      // For the very first user creation, there won't be an auth token.
+      // The backend API is designed to handle this specific case.
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -96,11 +98,13 @@ export function UserModal({ children }: { children: React.ReactNode }) {
 
           toast({
               title: "Success!",
-              description: `User "${values.name}" has been created.`,
+              description: `User "${values.name}" has been created. The page will now reload.`,
           });
           setIsOpen(false);
           // Force a reload to update user list and ensure correct state
-          window.location.reload();
+          setTimeout(() => {
+              window.location.reload();
+          }, 1500)
 
         } catch (error: any) {
           toast({ variant: 'destructive', title: "Error", description: error.message})

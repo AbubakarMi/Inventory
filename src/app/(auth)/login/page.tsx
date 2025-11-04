@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import * as React from "react";
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +26,14 @@ export default function LoginPage() {
   const router = useRouter()
   const auth = useAuth()
   const { toast } = useToast()
+  
+  React.useEffect(() => {
+    // This is a one-time check to ensure the admin user can be created.
+    // It silently calls the API when the login page loads.
+    fetch('/api/ensure-admin').catch(console.error);
+  }, []);
+
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -46,7 +55,7 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       
-      // Force a token refresh to get latest claims after login. This is crucial.
+      // THIS IS THE CRITICAL FIX: Force a token refresh to get latest claims after login.
       await userCredential.user.getIdToken(true);
 
       toast({
@@ -94,7 +103,7 @@ export default function LoginPage() {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="m@example.com"
+                        placeholder="admin@gmail.com"
                         {...field}
                       />
                     </FormControl>
@@ -114,7 +123,7 @@ export default function LoginPage() {
                       </Link>
                     </div>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" placeholder="Password123" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
