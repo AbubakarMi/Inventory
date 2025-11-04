@@ -18,9 +18,8 @@ export default function UsersPage() {
     const [isFirstUser, setIsFirstUser] = useState(false);
 
     // Use a different name for the data from useCollection to avoid conflict with the type
-    const { data: usersData, loading } = useCollection<UserType>(
-        firestore ? collection(firestore, 'users') : null
-    );
+    const usersQuery = useMemo(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+    const { data: usersData, loading } = useCollection<UserType>(usersQuery);
 
     useEffect(() => {
         const checkUsers = async () => {

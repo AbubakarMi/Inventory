@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { onSnapshot, Query, DocumentData, QuerySnapshot, FirestoreError } from 'firebase/firestore';
 import type { WithId } from '@/lib/types';
 
@@ -19,27 +19,23 @@ type CollectionState<T> = {
 export function useCollection<T>(query: Query<DocumentData> | null) {
   const [state, setState] = useState<CollectionState<T>>({
     data: null,
-    loading: true,
+    loading: query !== null, // Only loading if query is not null
     error: null,
   });
 
-  // Use a ref to store the query to prevent re-running the effect on every render
-  const queryRef = useRef(query);
-  useEffect(() => {
-    queryRef.current = query;
-  }, [query]);
-
+  const queryPath = useMemo(() => query?.path, [query]);
 
   useEffect(() => {
-    if (!queryRef.current) {
-        setState(prevState => ({ ...prevState, loading: false }));
-        return;
+    // Initial loading state should be true only if query is present
+    setState(prevState => ({ ...prevState, loading: query !== null }));
+
+    if (!query) {
+      setState({ data: null, loading: false, error: null });
+      return;
     }
     
-    setState(prevState => ({ ...prevState, loading: true }));
-
     const unsubscribe = onSnapshot(
-      queryRef.current,
+      query,
       (snapshot: QuerySnapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<T>));
         setState({ data, loading: false, error: null });
@@ -51,7 +47,7 @@ export function useCollection<T>(query: Query<DocumentData> | null) {
     );
 
     return () => unsubscribe();
-  }, [queryRef.current]);
+  }, [queryPath]); // Depend on the memoized path
 
   return state;
 }

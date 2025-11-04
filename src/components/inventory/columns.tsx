@@ -12,6 +12,7 @@ import { useFirestore, useCollection } from "@/firebase"
 import { deleteDocument } from "@/firebase/firestore/mutations"
 import { collection } from "firebase/firestore"
 import type { Category } from "@/lib/types"
+import { useMemo } from "react"
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -63,7 +64,8 @@ export const columns: ColumnDef<InventoryItem>[] = [
     cell: ({ row }) => {
         const item = row.original;
         const firestore = useFirestore();
-        const { data: categories } = useCollection<Category>(firestore ? collection(firestore, 'categories') : null);
+        const categoriesQuery = useMemo(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
+        const { data: categories } = useCollection<Category>(categoriesQuery);
 
         const handleDelete = () => {
           if (!firestore) return;

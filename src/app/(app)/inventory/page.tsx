@@ -22,13 +22,11 @@ export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState('All');
   
-  const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(
-    firestore ? collection(firestore, 'inventory') : null
-  );
+  const itemsQuery = React.useMemo(() => firestore ? collection(firestore, 'inventory') : null, [firestore]);
+  const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(itemsQuery);
   
-  const { data: categories, loading: categoriesLoading } = useCollection<Category>(
-    firestore ? collection(firestore, 'categories') : null
-  );
+  const categoriesQuery = React.useMemo(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
+  const { data: categories, loading: categoriesLoading } = useCollection<Category>(categoriesQuery);
 
   const allCategories = React.useMemo(() => {
     return [{ id: 'all', name: 'All', parent: null }, ...(categories || [])];

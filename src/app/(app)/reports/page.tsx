@@ -9,17 +9,16 @@ import { Download } from "lucide-react";
 import { useCollection, useFirestore } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import type { Sale, InventoryItem } from "@/lib/types";
+import { useMemo } from "react";
 
 export default function ReportsPage() {
     const firestore = useFirestore();
 
-    const { data: sales, loading: salesLoading } = useCollection<Sale>(
-        firestore ? query(collection(firestore, 'sales')) : null
-    );
+    const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales')) : null, [firestore]);
+    const { data: sales, loading: salesLoading } = useCollection<Sale>(salesQuery);
 
-    const { data: inventoryItems, loading: inventoryLoading } = useCollection<InventoryItem>(
-        firestore ? query(collection(firestore, 'inventory')) : null
-    );
+    const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
+    const { data: inventoryItems, loading: inventoryLoading } = useCollection<InventoryItem>(inventoryQuery);
 
     if (salesLoading || inventoryLoading) {
         return <div>Loading reports...</div>;

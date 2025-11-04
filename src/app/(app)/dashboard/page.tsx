@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, Users, FileText, PlusCircle, PenSquare, PartyPopper } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -12,7 +12,7 @@ import { RecentSales } from "@/components/dashboard/recent-sales"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useCollection, useFirestore, useUser } from "@/firebase"
-import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore"
+import { collection, query, limit, orderBy } from "firebase/firestore"
 import type { InventoryItem, Sale, User, Category } from "@/lib/types"
 import { ItemModal } from "@/components/inventory/item-modal"
 import { TransactionModal } from "@/components/sales/transaction-modal"
@@ -24,21 +24,17 @@ export default function DashboardPage() {
   const { user, claims } = useUser();
   const firestore = useFirestore();
   
-  const { data: inventoryItems, loading: inventoryLoading } = useCollection<InventoryItem>(
-    firestore ? collection(firestore, 'inventory') : null
-  );
+  const inventoryQuery = useMemo(() => firestore ? collection(firestore, 'inventory') : null, [firestore]);
+  const { data: inventoryItems, loading: inventoryLoading } = useCollection<InventoryItem>(inventoryQuery);
   
-  const { data: sales, loading: salesLoading } = useCollection<Sale>(
-    firestore ? query(collection(firestore, 'sales'), orderBy('date', 'desc'), limit(5)) : null
-  );
+  const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales'), orderBy('date', 'desc'), limit(5)) : null, [firestore]);
+  const { data: sales, loading: salesLoading } = useCollection<Sale>(salesQuery);
 
-  const { data: users, loading: usersLoading } = useCollection<User>(
-    firestore ? collection(firestore, 'users') : null
-  );
+  const usersQuery = useMemo(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+  const { data: users, loading: usersLoading } = useCollection<User>(usersQuery);
 
-  const { data: categories, loading: categoriesLoading } = useCollection<Category>(
-    firestore ? collection(firestore, 'categories') : null
-  );
+  const categoriesQuery = useMemo(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
+  const { data: categories, loading: categoriesLoading } = useCollection<Category>(categoriesQuery);
 
   const lowStockItems = inventoryItems?.filter(item => item.quantity <= item.threshold).length || 0;
   const totalItems = inventoryItems?.reduce((sum, item) => sum + item.quantity, 0) || 0;

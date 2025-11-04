@@ -52,12 +52,11 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
   const firestore = useFirestore();
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const { data: categories, loading: categoriesLoading } = useCollection<Category>(
-    firestore ? collection(firestore, 'categories') : null
-  );
-  const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(
-    firestore ? collection(firestore, 'inventory') : null
-  );
+  const categoriesQuery = React.useMemo(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
+  const { data: categories, loading: categoriesLoading } = useCollection<Category>(categoriesQuery);
+
+  const inventoryQuery = React.useMemo(() => firestore ? collection(firestore, 'inventory') : null, [firestore]);
+  const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(inventoryQuery);
 
   const defaultCategory = transactionToEdit ? inventoryItems?.find(i => i.name === transactionToEdit.itemName)?.category : "";
 

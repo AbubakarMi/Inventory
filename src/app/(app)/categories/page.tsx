@@ -14,13 +14,11 @@ import { useMemo } from "react";
 export default function CategoriesPage() {
     const firestore = useFirestore();
 
-    const { data: categories, loading: categoriesLoading } = useCollection<Category>(
-        firestore ? collection(firestore, 'categories') : null
-    );
+    const categoriesQuery = useMemo(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
+    const { data: categories, loading: categoriesLoading } = useCollection<Category>(categoriesQuery);
 
-    const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(
-        firestore ? collection(firestore, 'inventory') : null
-    );
+    const itemsQuery = useMemo(() => firestore ? collection(firestore, 'inventory') : null, [firestore]);
+    const { data: inventoryItems, loading: itemsLoading } = useCollection<InventoryItem>(itemsQuery);
 
     const enrichedCategories: EnrichedCategory[] = useMemo(() => {
         if (!categories || !inventoryItems) return [];

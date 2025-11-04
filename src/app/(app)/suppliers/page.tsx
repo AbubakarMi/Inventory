@@ -8,12 +8,13 @@ import { SupplierModal } from "@/components/suppliers/supplier-modal";
 import { useCollection, useFirestore } from "@/firebase";
 import { collection } from "firebase/firestore";
 import type { Supplier } from "@/lib/types";
+import { useMemo } from "react";
 
 export default function SuppliersPage() {
     const firestore = useFirestore();
-    const { data: suppliers, loading } = useCollection<Supplier>(
-        firestore ? collection(firestore, 'suppliers') : null
-    );
+
+    const suppliersQuery = useMemo(() => firestore ? collection(firestore, 'suppliers') : null, [firestore]);
+    const { data: suppliers, loading } = useCollection<Supplier>(suppliersQuery);
 
     if (loading) {
         return <div>Loading...</div>

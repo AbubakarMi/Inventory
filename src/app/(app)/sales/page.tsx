@@ -9,17 +9,16 @@ import { TransactionModal } from "@/components/sales/transaction-modal";
 import { useCollection, useFirestore } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import type { Sale } from "@/lib/types";
+import { useMemo } from "react";
 
 export default function SalesPage() {
     const firestore = useFirestore();
 
-    const { data: salesData, loading: salesLoading } = useCollection<Sale>(
-        firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Sale')) : null
-    );
+    const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Sale')) : null, [firestore]);
+    const { data: salesData, loading: salesLoading } = useCollection<Sale>(salesQuery);
 
-    const { data: usageData, loading: usageLoading } = useCollection<Sale>(
-        firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Usage')) : null
-    );
+    const usageQuery = useMemo(() => firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Usage')) : null, [firestore]);
+    const { data: usageData, loading: usageLoading } = useCollection<Sale>(usageQuery);
 
     const isLoading = salesLoading || usageLoading;
 
