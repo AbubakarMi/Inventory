@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { signInWithEmailAndPassword } from "firebase/auth"
-import React from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,11 +33,6 @@ export default function LoginPage() {
     },
   })
 
-  // Silently ensure the admin user exists when the page loads.
-  React.useEffect(() => {
-    fetch('/api/ensure-admin').catch(console.error);
-  }, []);
-
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     if (!auth) {
       toast({
@@ -64,6 +58,7 @@ export default function LoginPage() {
 
     } catch (error: any) {
       let description = "An unexpected error occurred. Please try again.";
+      // Catch specific Firebase auth errors
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         description = "Invalid credentials. Please check your email and password.";
       } else if (error.code === 'auth/too-many-requests') {
@@ -85,7 +80,7 @@ export default function LoginPage() {
             <Tractor className="h-8 w-8 text-primary" />
             <CardTitle className="text-3xl font-bold">FarmSight</CardTitle>
           </div>
-          <CardDescription>Enter your email below to login to your account. The default admin is admin@gmail.com with password Password123</CardDescription>
+          <CardDescription>Enter your email below to login to your account. First time here? Navigate to the <Link href="/users" className="underline">Users page</Link> to create the admin account.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -128,9 +123,6 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Logging in..." : "Login"}
               </Button>
-               <div className="mt-4 text-center text-sm">
-                First time here? The admin account is created automatically.
-              </div>
             </form>
           </Form>
         </CardContent>

@@ -36,20 +36,17 @@ export async function POST(request: Request) {
     const json = await request.json();
     const data = userSchema.parse(json);
 
-    let userRole = data.role;
-
-    // Check if this is the first user. If so, they become admin.
+    // Check if this is the first user being created.
     const userList = await admin.auth().listUsers(1).catch(() => ({users: []}));
     const isFirstUser = userList.users.length === 0;
     
-    // Hardcode the admin role for the specific email, or if it's the first user
-    if (isFirstUser || data.email === 'admin@gmail.com') {
+    let userRole = data.role;
+
+    // If it is the first user, they MUST be an admin.
+    if (isFirstUser) {
       userRole = 'Admin';
-    }
-
-
-    // If not the first user, verify the request is from an admin
-    if (!isFirstUser) {
+    } else {
+        // If not the first user, the request must be authenticated by an existing admin.
         const authorization = headers().get('Authorization');
         const token = authorization?.split('Bearer ')[1];
         if (!token) {
@@ -68,7 +65,7 @@ export async function POST(request: Request) {
       displayName: data.name,
     });
 
-    // Set custom claims for role-based access
+    // Set custom claims for role-based access. This is the authoritative step.
     await admin.auth().setCustomUserClaims(userRecord.uid, { role: userRole });
 
     // Create user document in Firestore, using the UID from Auth as the document ID
@@ -80,10 +77,7 @@ export async function POST(request: Request) {
     };
     await db.collection('users').doc(userRecord.uid).set(userDocData);
 
-    // Re-fetch the user to ensure claims are applied before returning
-    const updatedUserRecord = await admin.auth().getUser(userRecord.uid);
-
-    return NextResponse.json({ id: updatedUserRecord.uid, ...userDocData }, { status: 201 });
+    return NextResponse.json({ id: userRecord.uid, ...userDocData }, { status: 201 });
 
   } catch (error: any) {
     console.error("Error creating user:", error);

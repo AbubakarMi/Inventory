@@ -69,7 +69,6 @@ export function UserModal({ children }: { children: React.ReactNode }) {
 
     async function onSubmit(values: z.infer<typeof userSchema>) {
       const user = auth?.currentUser;
-      // If there's a current user (i.e., not the very first admin creation), get their token for auth.
       const token = user ? await user.getIdToken() : null;
 
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
@@ -100,7 +99,7 @@ export function UserModal({ children }: { children: React.ReactNode }) {
               description: `User "${values.name}" has been created.`,
           });
           setIsOpen(false);
-          // Force a reload to update user list and potentially redirect if it's the first login
+          // Force a reload to update user list and ensure correct state
           window.location.reload();
 
         } catch (error: any) {
