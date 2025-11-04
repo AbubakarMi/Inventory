@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
-import { setDoc, doc } from "firebase/firestore"
+import { signInWithEmailAndPassword } from "firebase/auth"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,7 +24,6 @@ const loginSchema = z.object({
 export default function LoginPage() {
   const router = useRouter()
   const auth = useAuth()
-  const firestore = useFirestore()
   const { toast } = useToast()
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -37,21 +35,18 @@ export default function LoginPage() {
 
   async function attemptLogin(values: z.infer<typeof loginSchema>) {
     if (!auth) throw new Error("Auth not initialized");
-    const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-    const user = userCredential.user;
-    const idTokenResult = await user.getIdTokenResult();
-    const role = idTokenResult.claims.role;
-
+    await signInWithEmailAndPassword(auth, values.email, values.password);
+    
     toast({
       title: "Login Successful",
-      description: `Welcome, ${role || 'User'}!`,
+      description: `Welcome back!`,
     });
 
     router.push("/dashboard");
   }
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    if (!auth || !firestore) {
+    if (!auth) {
       toast({
         variant: "destructive",
         title: "Auth not initialized",
@@ -85,7 +80,7 @@ export default function LoginPage() {
 
           if (!response.ok) {
             const result = await response.json();
-            throw new Error(result.error || "Failed to create admin user.");
+            throw new Error(result.error || "Failed to create admin user via API.");
           }
           
           toast({ title: "Admin user created!", description: "Logging you in..." });
@@ -103,7 +98,6 @@ export default function LoginPage() {
       }
       
       // Standard error handling
-      console.error("Login Error:", error);
       let description = "An unexpected error occurred. Please try again.";
       if (error.code === 'auth/configuration-not-found') {
         description = "Authentication is not configured for this project. Please enable Email/Password sign-in in your Firebase console.";
