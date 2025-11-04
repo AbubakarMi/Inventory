@@ -1,9 +1,8 @@
 
-
 'use client';
 
 import { useUser } from '@/firebase';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Header from "@/components/layout/header";
@@ -17,17 +16,14 @@ export default function AppLayout({
 }) {
   const { user, claims, loading } = useUser();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
-    // If loading is finished and there's no user, redirect to login.
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
   
-  // While checking auth state, show a loading skeleton.
-  // Also wait for claims to be loaded to prevent role-based UI flicker.
+  // While checking auth state, or if the user is logged in but we are waiting for their roles.
   if (loading || (user && !claims)) {
      return (
         <div className="flex h-screen w-full bg-background">
@@ -70,8 +66,8 @@ export default function AppLayout({
     )
   }
 
-  // If there's a user, render the main app layout.
-  if (user) {
+  // If there's a user and their claims are loaded, render the app.
+  if (user && claims) {
       return (
         <SidebarProvider>
             <div className="flex h-screen w-full">
@@ -87,7 +83,6 @@ export default function AppLayout({
       );
   }
 
-  // If no user and not loading, it means we're about to redirect.
-  // Render null to avoid a flash of un-styled content.
+  // If no user and not loading, we're about to redirect. Render null.
   return null;
 }
