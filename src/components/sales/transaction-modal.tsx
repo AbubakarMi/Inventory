@@ -31,7 +31,7 @@ import {
 import type { Sale, InventoryItem, Category } from "@/lib/types"
 import { addSale, updateSale } from "@/firebase/services/sales"
 import { initializeFirebase, useCollection } from "@/firebase"
-import { collection, query } from "firebase/firestore"
+import { collection, query, getDocs } from "firebase/firestore"
 
 type TransactionModalProps = {
   children: React.ReactNode;
@@ -52,6 +52,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
 
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const defaultCategory = transactionToEdit && inventoryItems ? inventoryItems.find(i => i.name === transactionToEdit.itemName)?.category : "";
 
@@ -71,11 +72,18 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
   });
 
   const selectedCategory = form.watch("category");
+  const selectedItemName = form.watch("itemName");
 
   const filteredItems = React.useMemo(() => {
     if (!selectedCategory || !inventoryItems) return [];
     return inventoryItems.filter(item => item.category === selectedCategory);
   }, [selectedCategory, inventoryItems]);
+
+  const selectedItem = React.useMemo(() => {
+    if (!selectedItemName || !inventoryItems) return null;
+    return inventoryItems.find(item => item.id === selectedItemName);
+  }, [selectedItemName, inventoryItems]);
+
 
   React.useEffect(() => {
       if (!transactionToEdit || selectedCategory !== defaultCategory) {
@@ -85,12 +93,13 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
 
   React.useEffect(() => {
     if (isOpen) {
-        if (transactionToEdit) {
-            const defaultCat = inventoryItems?.find(i => i.name === transactionToEdit.itemName)?.category
+        if (transactionToEdit && inventoryItems) {
+            const defaultCat = inventoryItems?.find(i => i.name === transactionToEdit.itemName)?.category;
+            const item = inventoryItems?.find(i => i.name === transactionToEdit.itemName);
             form.reset({
                 type: transactionToEdit.type,
-                category: defaultCat,
-                itemName: transactionToEdit.itemName,
+                category: defaultCat || "",
+                itemName: item?.id || "",
                 quantity: transactionToEdit.quantity,
             })
         } else {
@@ -106,20 +115,23 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
 
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
+    setIsSubmitting(true);
     try {
-        const item = inventoryItems?.find(i => i.name === values.itemName);
-        if (!item) throw new Error("Item not found");
+        const item = inventoryItems?.find(i => i.id === values.itemName);
+        if (!item?.id) throw new Error("Item not found");
 
         if (transactionToEdit?.id) {
             // Note: updating a sale does not currently re-adjust inventory.
             await updateSale(transactionToEdit.id, {
                 ...values,
+                itemName: item.name,
                 total: values.quantity * item.price,
             });
         } else {
             await addSale({
-                ...values,
-                total: values.quantity * item.price,
+                itemName: item.name,
+                quantity: values.quantity,
+                type: values.type,
             });
         }
         toast({
@@ -134,6 +146,8 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
             title: "Uh oh! Something went wrong.",
             description: error.message || "There was a problem with your request.",
         });
+    } finally {
+        setIsSubmitting(false);
     }
   }
 
@@ -165,6 +179,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                       className="flex gap-4"
+                      disabled={isSubmitting}
                     >
                       <FormItem className="flex items-center space-x-2">
                         <FormControl>
@@ -190,7 +205,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
@@ -212,7 +227,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Item</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory}>
+                   <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory || isSubmitting}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={selectedCategory ? "Select an item" : "Select a category first"} />
@@ -220,7 +235,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
                     </FormControl>
                     <SelectContent>
                         {filteredItems.map(item => (
-                            <SelectItem key={item.id} value={item.name}>{item.name}</SelectItem>
+                            <SelectItem key={item.id} value={item.id!}>{item.name} ({item.quantity} {item.unit} in stock)</SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
@@ -235,17 +250,24 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
                 <FormItem>
                     <FormLabel>Quantity</FormLabel>
                     <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" {...field} disabled={isSubmitting} max={selectedItem?.quantity} />
                     </FormControl>
+                    {selectedItem && field.value > selectedItem.quantity && (
+                         <p className="text-sm font-medium text-destructive">
+                            Cannot sell more than available stock ({selectedItem.quantity}).
+                         </p>
+                    )}
                     <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
                 <DialogClose asChild>
-                    <Button type="button" variant="outline" onClick={() => form.reset()}>Cancel</Button>
+                    <Button type="button" variant="outline" disabled={isSubmitting}>Cancel</Button>
                 </DialogClose>
-                <Button type="submit">Submit</Button>
+                <Button type="submit" disabled={isSubmitting || (selectedItem && form.getValues("quantity") > selectedItem.quantity)}>
+                    {isSubmitting ? "Submitting..." : "Submit"}
+                </Button>
             </DialogFooter>
           </form>
         </Form>

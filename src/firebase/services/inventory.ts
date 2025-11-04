@@ -12,6 +12,7 @@ import {
   where,
   getDocs,
   getDoc,
+  Transaction,
 } from 'firebase/firestore';
 
 const { firestore } = initializeFirebase();
@@ -24,25 +25,25 @@ export const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'status'
 
 export const updateInventoryItem = async (id: string, item: Partial<InventoryItem>) => {
   const itemRef = doc(firestore, 'inventory', id);
-  const finalUpdate = { ...item };
-
-  // Fetch the existing document to get properties that might not be in the update payload
-  const currentDoc = await getDoc(itemRef);
-  if (!currentDoc.exists()) {
-    throw new Error("Item not found");
-  }
-  const currentData = currentDoc.data() as InventoryItem;
   
-  const newQuantity = item.quantity ?? currentData.quantity;
-  const newThreshold = item.threshold ?? currentData.threshold;
-
-  // Always recalculate status if quantity is part of the update
-  if (item.quantity !== undefined) {
-    const status = newQuantity > newThreshold ? 'In Stock' : newQuantity > 0 ? 'Low Stock' : 'Out of Stock';
-    finalUpdate.status = status;
+  // Use a transaction to safely read and then write
+  const docSnap = await getDoc(itemRef);
+  if (!docSnap.exists()) {
+    throw new Error("Document does not exist!");
   }
   
-  return updateDoc(itemRef, finalUpdate);
+  const currentData = docSnap.data();
+  const updateData = { ...item };
+
+  // Recalculate status if quantity or threshold is being changed
+  const quantity = item.quantity ?? currentData.quantity;
+  const threshold = item.threshold ?? currentData.threshold;
+
+  if (item.quantity !== undefined || item.threshold !== undefined) {
+    updateData.status = quantity > threshold ? 'In Stock' : quantity > 0 ? 'Low Stock' : 'Out of Stock';
+  }
+  
+  return updateDoc(itemRef, updateData);
 };
 
 export const deleteInventoryItem = async (id: string) => {
@@ -51,7 +52,7 @@ export const deleteInventoryItem = async (id: string) => {
 };
 
 
-export const updateStockAfterSale = async (itemName: string, quantitySold: number) => {
+export const updateStockAfterSale = async (transaction: Transaction, itemName: string, quantitySold: number) => {
     const q = query(inventoryCollection, where("name", "==", itemName));
     const querySnapshot = await getDocs(q);
 
@@ -59,14 +60,15 @@ export const updateStockAfterSale = async (itemName: string, quantitySold: numbe
         throw new Error(`Item ${itemName} not found in inventory.`);
     }
 
-    const batch = writeBatch(firestore);
-    querySnapshot.forEach(documentSnapshot => {
-        const item = documentSnapshot.data() as InventoryItem;
-        const newQuantity = item.quantity - quantitySold;
-        const newStatus = newQuantity > item.threshold ? 'In Stock' : newQuantity > 0 ? 'Low Stock' : 'Out of Stock';
-        const itemRef = doc(firestore, 'inventory', documentSnapshot.id);
-        batch.update(itemRef, { quantity: newQuantity, status: newStatus });
-    });
+    const docSnapshot = querySnapshot.docs[0];
+    const item = docSnapshot.data() as InventoryItem;
+    const newQuantity = item.quantity - quantitySold;
 
-    await batch.commit();
+    if (newQuantity < 0) {
+        throw new Error(`Not enough stock for ${itemName}.`);
+    }
+
+    const newStatus = newQuantity > item.threshold ? 'In Stock' : newQuantity > 0 ? 'Low Stock' : 'Out of Stock';
+    const itemRef = doc(firestore, 'inventory', docSnapshot.id);
+    transaction.update(itemRef, { quantity: newQuantity, status: newStatus });
 }
