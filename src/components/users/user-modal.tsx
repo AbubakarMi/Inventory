@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
 import type { User } from "@/lib/types"
+import { addUser } from "@/firebase/services/users";
 
 type UserModalProps = {
   children: React.ReactNode;
@@ -37,11 +38,13 @@ type UserModalProps = {
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  role: z.string().min(1, "Role is required"),
+  role: z.enum(["Admin", "Manager", "Staff", "Storekeeper"], { required_error: "Role is required" }),
+  // For new users, password is required. For edits, it's optional.
   password: z.string().min(8, "Password must be at least 8 characters long").optional().or(z.literal('')),
   confirmPassword: z.string().optional(),
 }).refine(data => {
-    if(data.password) {
+    // If there is a password, it must match confirmPassword
+    if(data.password && data.password.length > 0) {
         return data.password === data.confirmPassword;
     }
     return true;
@@ -54,17 +57,22 @@ const userSchema = z.object({
 export function UserModal({ children, userToEdit }: UserModalProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const title = userToEdit ? "Edit User" : "Add New User";
     const description = userToEdit ? "Update the user's details." : "Enter the user's details to grant them access.";
 
-
+    // Adjust schema for editing - password is not required
+    const editUserSchema = userSchema.extend({
+        password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal('')),
+    });
+    
     const form = useForm<z.infer<typeof userSchema>>({
-        resolver: zodResolver(userSchema),
-        defaultValues: userToEdit || {
+        resolver: zodResolver(userToEdit ? editUserSchema : userSchema),
+        defaultValues: userToEdit ? { ...userToEdit, password: '', confirmPassword: ''} : {
             name: "",
             email: "",
-            role: "",
+            role: "Staff",
             password: "",
             confirmPassword: "",
         },
@@ -72,23 +80,44 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
 
     React.useEffect(() => {
         if(isOpen) {
-            form.reset(userToEdit || {
+            form.reset(userToEdit ? { ...userToEdit, password: '', confirmPassword: ''} : {
                 name: "",
                 email: "",
-                role: "",
+                role: "Staff",
                 password: "",
                 confirmPassword: "",
             });
         }
     }, [userToEdit, form, isOpen]);
 
-    function onSubmit(values: z.infer<typeof userSchema>) {
-        console.log(values);
-        toast({
-            title: "Success!",
-            description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
-        });
-        setIsOpen(false);
+    async function onSubmit(values: z.infer<typeof userSchema>) {
+        if (!userToEdit && !values.password) {
+            form.setError("password", { type: "manual", message: "Password is required for new users." });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            if (userToEdit?.id) {
+                // await updateUser(userToEdit.id, values); // updateUser service function needed
+                console.log("Updating user (logic to be implemented)", values)
+            } else {
+                await addUser(values as any);
+            }
+            toast({
+                title: "Success!",
+                description: `User "${values.name}" has been ${userToEdit ? 'updated' : 'created'}.`,
+            });
+            setIsOpen(false);
+        } catch (error: any) {
+             toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: error.message || "There was a problem with your request.",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
 
@@ -113,7 +142,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Name</FormLabel>
                             <FormControl>
-                                <Input {...field} />
+                                <Input {...field} disabled={isSubmitting} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -126,7 +155,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                                <Input type="email" {...field} />
+                                <Input type="email" {...field} disabled={isSubmitting || !!userToEdit} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -138,7 +167,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Role</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a role" />
@@ -148,6 +177,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                                     <SelectItem value="Admin">Admin</SelectItem>
                                     <SelectItem value="Manager">Manager</SelectItem>
                                     <SelectItem value="Staff">Staff</SelectItem>
+                                    <SelectItem value="Storekeeper">Storekeeper</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -161,7 +191,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
-                                <Input type="password" {...field} placeholder={userToEdit ? "Leave blank to keep current password" : ""}/>
+                                <Input type="password" {...field} placeholder={userToEdit ? "Leave blank to keep current password" : ""} disabled={isSubmitting} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -174,7 +204,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Confirm Password</FormLabel>
                             <FormControl>
-                                <Input type="password" {...field} />
+                                <Input type="password" {...field} disabled={isSubmitting}/>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -182,9 +212,11 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                 />
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type="button" variant="outline">Cancel</Button>
+                        <Button type="button" variant="outline" disabled={isSubmitting}>Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Save Changes</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Saving..." : "Save Changes"}
+                    </Button>
                 </DialogFooter>
             </form>
         </Form>

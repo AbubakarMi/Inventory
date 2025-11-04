@@ -42,21 +42,12 @@ const supplierSchema = z.object({
   rating: z.number().min(0).max(5),
 });
 
-
 export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) {
-    const defaultValues = supplierToEdit ? { ...supplierToEdit, products: supplierToEdit.products.join(', ') } : {
-        name: "",
-        contact: "",
-        products: "",
-        rating: 3,
-    };
-
     const form = useForm<z.infer<typeof supplierSchema>>({
         resolver: zodResolver(supplierSchema),
-        defaultValues,
     });
     
-    const { isOpen, setIsOpen, handleSubmit } = useSubmit({
+    const { isOpen, setIsOpen, handleSubmit, isSubmitting } = useSubmit({
         form,
         formatValues: (values) => ({ ...values, products: values.products.split(',').map(p => p.trim()).filter(Boolean) }),
         entity: 'Supplier',
@@ -65,6 +56,12 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
 
     React.useEffect(() => {
         if(isOpen) {
+            const defaultValues = supplierToEdit ? { ...supplierToEdit, products: supplierToEdit.products.join(', ') } : {
+                name: "",
+                contact: "",
+                products: "",
+                rating: 3,
+            };
             form.reset(defaultValues);
         }
     }, [isOpen, supplierToEdit, form]);
@@ -93,7 +90,7 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
                         <FormItem>
                             <FormLabel>Name</FormLabel>
                             <FormControl>
-                                <Input {...field} placeholder="e.g. Green Farms" />
+                                <Input {...field} placeholder="e.g. Green Farms" disabled={isSubmitting} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -106,7 +103,7 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
                         <FormItem>
                             <FormLabel>Contact Info</FormLabel>
                             <FormControl>
-                                <Input {...field} placeholder="e.g. contact@greenfarms.com" />
+                                <Input {...field} placeholder="e.g. contact@greenfarms.com" disabled={isSubmitting} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -119,7 +116,7 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
                         <FormItem>
                             <FormLabel>Products Supplied</FormLabel>
                             <FormControl>
-                                <Input {...field} placeholder="e.g. Organic Apples, Carrots" />
+                                <Input {...field} placeholder="e.g. Organic Apples, Carrots" disabled={isSubmitting} />
                             </FormControl>
                             <FormDescription>
                                 Enter a comma-separated list of products.
@@ -141,6 +138,7 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
                                     step={1}
                                     defaultValue={[field.value]}
                                     onValueChange={(value) => field.onChange(value[0])}
+                                    disabled={isSubmitting}
                                 />
                             </FormControl>
                             <FormMessage />
@@ -149,9 +147,11 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
                 />
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type="button" variant="outline">Cancel</Button>
+                        <Button type="button" variant="outline" disabled={isSubmitting}>Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Save Changes</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Saving..." : "Save Changes"}
+                    </Button>
                 </DialogFooter>
             </form>
         </Form>
