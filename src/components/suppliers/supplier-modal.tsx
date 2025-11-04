@@ -67,7 +67,7 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
         if(isOpen) {
             form.reset(defaultValues);
         }
-    }, [isOpen, supplierToEdit, form, defaultValues]);
+    }, [isOpen, supplierToEdit, form]);
 
     const title = supplierToEdit ? "Edit Supplier" : "Add New Supplier";
     const description = supplierToEdit ? "Update the supplier's details." : "Enter the supplier's details.";

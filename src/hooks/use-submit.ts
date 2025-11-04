@@ -30,15 +30,6 @@ export function useSubmit<T extends Record<string, any>>({
         });
         setIsOpen(false);
     };
-    
-    // Reset form when the dialog is closed to avoid stale data
-    React.useEffect(() => {
-        if (!isOpen) {
-            // A slight delay to allow the dialog to close before resetting
-            setTimeout(() => form.reset(), 100);
-        }
-    }, [isOpen, form]);
-
 
     return {
         isOpen,
