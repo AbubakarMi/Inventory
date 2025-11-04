@@ -73,7 +73,10 @@ export async function POST(request: Request) {
     };
     await db.collection('users').doc(userRecord.uid).set(userDocData);
 
-    return NextResponse.json({ id: userRecord.uid, ...userDocData }, { status: 201 });
+    // Re-fetch the user to ensure claims are applied before returning
+    const updatedUserRecord = await admin.auth().getUser(userRecord.uid);
+
+    return NextResponse.json({ id: updatedUserRecord.uid, ...userDocData }, { status: 201 });
 
   } catch (error: any) {
     console.error("Error creating user:", error);

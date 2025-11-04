@@ -6,31 +6,52 @@ import { DataTable } from "@/components/data-table";
 import { columns } from "@/components/users/columns";
 import { UserModal } from "@/components/users/user-modal";
 import { useCollection, useFirestore, useUser } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import type { User as UserType } from "@/lib/types";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function UsersPage() {
     const firestore = useFirestore();
     const { user: currentUser, claims } = useUser();
+    const router = useRouter();
+    const [isFirstUser, setIsFirstUser] = useState(false);
 
     // Use a different name for the data from useCollection to avoid conflict with the type
     const { data: usersData, loading } = useCollection<UserType>(
         firestore ? collection(firestore, 'users') : null
     );
 
+    useEffect(() => {
+        const checkUsers = async () => {
+            if (firestore) {
+                const usersSnapshot = await getDocs(collection(firestore, "users"));
+                if (usersSnapshot.empty) {
+                    setIsFirstUser(true);
+                }
+            }
+        };
+        checkUsers();
+    }, [firestore]);
+
     // Filter out the current user from the list
     const users = useMemo(() => {
-        if (!usersData || !currentUser) return [];
+        if (!usersData || !currentUser) return usersData || [];
         return usersData.filter(user => user.id !== currentUser.uid);
     }, [usersData, currentUser]);
     
-    const canAddUser = claims?.role === 'Admin';
-
+    // An admin can always add a user. Also, allow adding if there are no users yet.
+    const canAddUser = claims?.role === 'Admin' || isFirstUser;
 
     if (loading) {
         return <div>Loading...</div>
     }
+
+    if (!isFirstUser && !currentUser) {
+        router.push('/login');
+        return <div>Redirecting to login...</div>;
+    }
+
 
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">

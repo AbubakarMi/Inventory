@@ -71,13 +71,15 @@ export function UserModal({ children }: { children: React.ReactNode }) {
       const user = auth?.currentUser;
       const token = user ? await user.getIdToken() : null;
 
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
         try {
           const response = await fetch('/api/users', {
             method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
+            headers: headers,
             body: JSON.stringify({
               name: values.name,
               email: values.email,
@@ -97,6 +99,8 @@ export function UserModal({ children }: { children: React.ReactNode }) {
               description: `User "${values.name}" has been created.`,
           });
           setIsOpen(false);
+          // Force a reload to update user list and potentially redirect if it's the first login
+          window.location.reload();
 
         } catch (error: any) {
           toast({ variant: 'destructive', title: "Error", description: error.message})
