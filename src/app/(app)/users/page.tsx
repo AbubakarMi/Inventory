@@ -46,7 +46,9 @@ export default function UsersPage() {
     if (loading) {
         return <div>Loading...</div>
     }
-
+    
+    // This is a special case for the very first user creation flow.
+    // If there is no current user and it's not the first user setup, redirect.
     if (!isFirstUser && !currentUser) {
         router.push('/login');
         return <div>Redirecting to login...</div>;

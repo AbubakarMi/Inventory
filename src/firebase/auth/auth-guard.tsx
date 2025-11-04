@@ -11,36 +11,43 @@ import { getDocs, collection } from 'firebase/firestore';
 
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, claims, loading } = useUser();
+  const { user, claims, loading: useUserLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   
   // This state tracks the initial, hard auth check on page load.
-  const [initialAuthCheck, setInitialAuthCheck] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(true);
 
   useEffect(() => {
     // Only run this on the client
     if (typeof window !== 'undefined') {
         const { auth, firestore } = initializeFirebase();
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (!user && pathname !== '/login') {
-                 // allow access to /users page if no users exist
-                if (pathname === '/users') {
-                    try {
-                        const usersSnapshot = await getDocs(collection(firestore, "users"));
-                        if (usersSnapshot.empty) {
-                            setInitialAuthCheck(false);
-                            return;
+            if (!user) {
+                // If not on the login page, redirect there.
+                // Exception: allow access to /users page if no users exist, which allows first user creation.
+                if (pathname !== '/login') {
+                    if (pathname === '/users') {
+                        try {
+                            const usersSnapshot = await getDocs(collection(firestore, "users"));
+                            if (usersSnapshot.empty) {
+                                setIsVerifying(false);
+                                return; // Allow access
+                            }
+                        } catch(e) {
+                            // If collection doesn't exist, it's the first run
+                             setIsVerifying(false);
+                            return; // Allow access
                         }
-                    } catch(e) {
-                        // If collection doesn't exist, it's the first run
-                        setInitialAuthCheck(false);
-                        return;
                     }
+                    router.push('/login');
+                } else {
+                     setIsVerifying(false);
                 }
-                router.push('/login');
             } else {
-                setInitialAuthCheck(false);
+                // User is logged in. The useUser hook will handle claims.
+                // We can stop verifying now.
+                setIsVerifying(false);
             }
         });
 
@@ -48,10 +55,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, router]);
 
-  // We are loading if the initial auth check hasn't finished,
-  // OR if the useUser hook is still loading,
-  // OR if we have a user but their claims haven't loaded yet.
-  const isLoading = initialAuthCheck || loading || (user && !claims);
+  // We are in a loading state if:
+  // 1. The initial onAuthStateChanged check is running (isVerifying).
+  // 2. The useUser hook is still fetching the user object and claims.
+  // 3. We have a user object but are still waiting for their custom claims to load.
+  const isLoading = isVerifying || useUserLoading || (user && !claims);
 
   if (isLoading) {
     return (
@@ -80,16 +88,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // If on login page, let it render
-  if (pathname === '/login') {
-    return <>{children}</>;
+  // If we are on the login page and the user is already authenticated, redirect to dashboard
+  if (user && pathname === '/login') {
+    router.push('/dashboard');
+    return <div>Redirecting...</div>;
   }
 
-  if (!user) {
-    // This case should be handled by the useEffect redirect, but as a fallback
+  // If we are not loading and there's no user, and we're not on the login page, it's a state that should have been caught by the useEffect.
+  // This can act as a fallback, but the redirect in useEffect is primary.
+  if (!user && pathname !== '/login') {
     return <div>Redirecting to login...</div>
   }
-
 
   return <>{children}</>;
 }
