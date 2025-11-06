@@ -103,12 +103,10 @@ export function ItemModal({ children, itemToEdit, categories, onSuccess }: ItemM
   async function onSubmit(values: ItemFormValues) {
     setIsSubmitting(true);
     try {
-      // Calculate status based on quantity and threshold
-      const status = values.quantity > values.threshold ? 'In Stock' : values.quantity > 0 ? 'Low Stock' : 'Out of Stock';
-      const itemData = { ...values, status };
-
+      // Status is now automatically calculated by the backend API
+      // based on quantity and threshold values
       if (itemToEdit?.id) {
-        await updateInventoryItem(itemToEdit.id, itemData);
+        await updateInventoryItem(itemToEdit.id, values);
       } else {
         await addInventoryItem(values);
       }

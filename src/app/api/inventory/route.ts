@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
-    const status = searchParams.get('status');
+    const statusFilter = searchParams.get('status');
     const search = searchParams.get('search');
 
     let sql = `
@@ -31,12 +31,6 @@ export async function GET(request: NextRequest) {
       params.push(category);
     }
 
-    if (status) {
-      paramCount++;
-      sql += ` AND i.status = $${paramCount}`;
-      params.push(status);
-    }
-
     if (search) {
       paramCount++;
       sql += ` AND i.name ILIKE $${paramCount}`;
@@ -47,7 +41,27 @@ export async function GET(request: NextRequest) {
 
     const result = await query(sql, params);
 
-    return NextResponse.json({ items: result.rows }, { status: 200 });
+    // Recalculate status for each item based on current quantity and threshold
+    const items = result.rows.map((item: any) => {
+      const qty = Number(item.quantity) || 0;
+      const thresh = Number(item.threshold) || 10;
+      let status;
+      if (qty === 0) {
+        status = 'Out of Stock';
+      } else if (qty <= thresh) {
+        status = 'Low Stock';
+      } else {
+        status = 'In Stock';
+      }
+      return { ...item, status };
+    });
+
+    // Filter by status if specified
+    const filteredItems = statusFilter
+      ? items.filter((item: any) => item.status === statusFilter)
+      : items;
+
+    return NextResponse.json({ items: filteredItems }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching inventory:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -63,10 +77,22 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, category, quantity, unit, status, cost, price, expiry, supplier, threshold } = body;
+    const { name, category, quantity, unit, cost, price, expiry, supplier, threshold } = body;
 
-    if (!name || !unit || !status) {
-      return NextResponse.json({ error: 'Name, unit, and status are required' }, { status: 400 });
+    if (!name || !unit) {
+      return NextResponse.json({ error: 'Name and unit are required' }, { status: 400 });
+    }
+
+    // Calculate status based on quantity and threshold
+    const qty = Number(quantity) || 0;
+    const thresh = Number(threshold) || 10;
+    let status;
+    if (qty === 0) {
+      status = 'Out of Stock';
+    } else if (qty <= thresh) {
+      status = 'Low Stock';
+    } else {
+      status = 'In Stock';
     }
 
     // Get category_id and supplier_id from names
@@ -87,7 +113,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO inventory (name, category_id, quantity, unit, status, cost, price, expiry, supplier_id, threshold, created_by, updated_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [name, category_id, quantity || 0, unit, status, cost || 0, price || 0, expiry || null, supplier_id, threshold || 10, user.id, user.id]
+      [name, category_id, qty, unit, status, cost || 0, price || 0, expiry || null, supplier_id, thresh, user.id, user.id]
     );
 
     await query(
@@ -116,6 +142,24 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    }
+
+    // If quantity or threshold is being updated, recalculate status
+    if ('quantity' in updateData || 'threshold' in updateData) {
+      // Get current item data
+      const currentItem = await query('SELECT quantity, threshold FROM inventory WHERE id = $1', [id]);
+      if (currentItem.rows.length > 0) {
+        const qty = Number(updateData.quantity ?? currentItem.rows[0].quantity) || 0;
+        const thresh = Number(updateData.threshold ?? currentItem.rows[0].threshold) || 10;
+
+        if (qty === 0) {
+          updateData.status = 'Out of Stock';
+        } else if (qty <= thresh) {
+          updateData.status = 'Low Stock';
+        } else {
+          updateData.status = 'In Stock';
+        }
+      }
     }
 
     const fields = Object.keys(updateData).filter(key => updateData[key] !== undefined);

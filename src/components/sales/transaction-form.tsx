@@ -36,6 +36,7 @@ type TransactionFormProps = {
   inventoryItems: InventoryItem[];
   suppliers: Supplier[];
   onSuccess?: () => void;
+  onSaleAdded?: (sale: any) => void;
 }
 
 const transactionSchema = z.object({
@@ -47,7 +48,7 @@ const transactionSchema = z.object({
   supplier: z.string().optional(),
 })
 
-export function TransactionForm({ children, categories, inventoryItems, suppliers, onSuccess }: TransactionFormProps) {
+export function TransactionForm({ children, categories, inventoryItems, suppliers, onSuccess, onSaleAdded }: TransactionFormProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -76,6 +77,13 @@ export function TransactionForm({ children, categories, inventoryItems, supplier
     return inventoryItems.filter(item => item.category === selectedCategory);
   }, [selectedCategory, inventoryItems]);
 
+  const selectedItem = React.useMemo(() => {
+    if (!selectedItemName || !inventoryItems) return null;
+    // Try to find by ID first, then by name as fallback
+    const found = inventoryItems.find(item => item.id === selectedItemName || item.name === selectedItemName);
+    return found || null;
+  }, [selectedItemName, inventoryItems]);
+
   const filteredSuppliers = React.useMemo(() => {
     if (!selectedItem || !suppliers) return [];
     // Filter suppliers that match the item's supplier field
@@ -86,13 +94,6 @@ export function TransactionForm({ children, categories, inventoryItems, supplier
     }
     return [];
   }, [selectedItem, suppliers]);
-
-  const selectedItem = React.useMemo(() => {
-    if (!selectedItemName || !inventoryItems) return null;
-    // Try to find by ID first, then by name as fallback
-    const found = inventoryItems.find(item => item.id === selectedItemName || item.name === selectedItemName);
-    return found || null;
-  }, [selectedItemName, inventoryItems]);
 
   // Calculate total price
   const totalPrice = React.useMemo(() => {
@@ -131,7 +132,7 @@ export function TransactionForm({ children, categories, inventoryItems, supplier
 
         const total = Number(item.price || 0) * Number(values.quantity);
 
-        await addSale({
+        const newSale = await addSale({
             item_id: item.id,
             item_name: item.name,
             quantity: values.quantity,
@@ -145,6 +146,10 @@ export function TransactionForm({ children, categories, inventoryItems, supplier
             description: `Transaction recorded successfully. Total: ₦${total.toFixed(2)}`,
         });
         setIsOpen(false);
+
+        if (onSaleAdded && newSale) {
+            onSaleAdded(newSale);
+        }
 
         if (onSuccess) {
             onSuccess();

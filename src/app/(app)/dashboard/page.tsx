@@ -85,8 +85,12 @@ export default function DashboardPage() {
     }
     
     const totalItems = inventoryItems.reduce((sum, item) => sum + item.quantity, 0);
-    const lowStockItems = inventoryItems.filter(item => item.status === 'Low Stock').length;
-    const outOfStockItems = inventoryItems.filter(item => item.status === 'Out of Stock').length;
+    const lowStockItems = inventoryItems.filter(item => {
+      const quantity = Number(item.quantity) || 0;
+      const threshold = Number(item.threshold) || 0;
+      return quantity > 0 && quantity <= threshold;
+    }).length;
+    const outOfStockItems = inventoryItems.filter(item => Number(item.quantity) === 0).length;
     
     const expiringSoon = inventoryItems.filter(item => 
         item.expiry && isBefore(new Date(item.expiry), addDays(new Date(), 7))

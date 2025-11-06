@@ -3,8 +3,8 @@ import { api } from '@/lib/api-client';
 import type { InventoryItem } from '@/lib/types';
 
 export const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'status'>) => {
-  const status = item.quantity > item.threshold ? 'In Stock' : item.quantity > 0 ? 'Low Stock' : 'Out of Stock';
-  const response = await api.post('/inventory', { ...item, status });
+  // Status is automatically calculated by the backend API based on quantity and threshold
+  const response = await api.post('/inventory', item);
   return response.item;
 };
 

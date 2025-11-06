@@ -16,20 +16,27 @@ type SalesTrendChartProps = {
 
 export function SalesTrendChart({ sales }: SalesTrendChartProps) {
   const chartData = React.useMemo(() => {
-    // Group sales by date
-    const salesByDate: { [key: string]: number } = {}
+    // Group sales by date, keeping track of original date for sorting
+    const salesByDate: { [key: string]: { total: number; timestamp: number } } = {}
 
     sales.forEach(sale => {
-      const date = new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      salesByDate[date] = (salesByDate[date] || 0) + Number(sale.total)
+      const dateObj = new Date(sale.date)
+      const dateKey = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+      if (!salesByDate[dateKey]) {
+        salesByDate[dateKey] = { total: 0, timestamp: dateObj.getTime() }
+      }
+      salesByDate[dateKey].total += Number(sale.total)
     })
 
-    // Get last 7 days or available data
-    const dates = Object.keys(salesByDate).slice(-7)
+    // Sort by timestamp (chronological order) and get last 7 days
+    const sortedEntries = Object.entries(salesByDate)
+      .sort((a, b) => a[1].timestamp - b[1].timestamp)
+      .slice(-7)
 
-    return dates.map(date => ({
+    return sortedEntries.map(([date, data]) => ({
       date,
-      sales: Number(salesByDate[date])
+      sales: Number(data.total)
     }))
   }, [sales])
 

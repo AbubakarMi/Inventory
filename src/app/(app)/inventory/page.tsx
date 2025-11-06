@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedStatus, setSelectedStatus] = useState('All');
   const { toast } = useToast();
 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -56,22 +57,32 @@ export default function InventoryPage() {
   const filteredItems = React.useMemo(() => {
     if (!inventoryItems) return [];
     return inventoryItems
-      .filter(item => 
+      .filter(item =>
         selectedCategory === 'All' || item.category === selectedCategory
       )
-      .filter(item => 
+      .filter(item =>
+        selectedStatus === 'All' || item.status === selectedStatus
+      )
+      .filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-  }, [inventoryItems, searchTerm, selectedCategory]);
+  }, [inventoryItems, searchTerm, selectedCategory, selectedStatus]);
 
   const columns = useMemo(() => getColumns({ categories: categories || [], toast, onRefresh: handleRefresh }), [categories, toast]);
 
   if (loadingItems || loadingCategories) {
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h1 className="font-semibold text-lg md:text-2xl">Inventory</h1>
-                <Skeleton className="h-10 w-full sm:w-[550px]" />
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <h1 className="font-semibold text-lg md:text-2xl">Inventory</h1>
+                    <Skeleton className="h-10 w-full sm:w-32" />
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                    <Skeleton className="h-10 w-full sm:flex-1" />
+                    <Skeleton className="h-10 w-full sm:w-[180px]" />
+                    <Skeleton className="h-10 w-full sm:w-[180px]" />
+                </div>
             </div>
             <div className="rounded-md border overflow-auto">
                 <div className="w-full">
@@ -86,22 +97,27 @@ export default function InventoryPage() {
   
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="font-semibold text-lg md:text-2xl">Inventory</h1>
-        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:flex-initial">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <h1 className="font-semibold text-lg md:text-2xl">Inventory</h1>
+          <ItemModal categories={categories || []} onSuccess={handleRefresh}>
+            <Button className="whitespace-nowrap w-full sm:w-auto">Add Item</Button>
+          </ItemModal>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+          <div className="relative w-full sm:flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="search" 
-              placeholder="Search items..." 
-              className="pl-8 w-full sm:w-[240px] lg:w-[300px]" 
+            <Input
+              type="search"
+              placeholder="Search items..."
+              className="pl-8 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by category" />
+              <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
               {allCategories.map(category => (
@@ -109,9 +125,17 @@ export default function InventoryPage() {
               ))}
             </SelectContent>
           </Select>
-          <ItemModal categories={categories || []} onSuccess={handleRefresh}>
-            <Button className="whitespace-nowrap w-full sm:w-auto">Add Item</Button>
-          </ItemModal>
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Status</SelectItem>
+              <SelectItem value="In Stock">In Stock</SelectItem>
+              <SelectItem value="Low Stock">Low Stock</SelectItem>
+              <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <DataTable 
