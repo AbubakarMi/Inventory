@@ -9,12 +9,13 @@ import { DataTable } from "@/components/data-table";
 import { getColumns } from "@/components/sales/columns";
 import { TransactionForm } from "@/components/sales/transaction-form";
 import { api } from "@/lib/api-client";
-import type { Sale, InventoryItem, Category } from "@/lib/types";
+import type { Sale, InventoryItem, Category, Supplier } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileWarning } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getInventoryItems } from "@/lib/services/inventory";
 import { getCategories } from "@/lib/services/categories";
+import { getSuppliers } from "@/lib/services/suppliers";
 
 export default function SalesPage() {
     const { toast } = useToast();
@@ -23,33 +24,26 @@ export default function SalesPage() {
     const [usageData, setUsageData] = useState<Sale[]>([]);
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const fetchData = React.useCallback(async () => {
         try {
             setLoading(true);
-            const [salesRes, usageRes, items, cats] = await Promise.all([
+            const [salesRes, usageRes, items, cats, sups] = await Promise.all([
                 api.get('/sales?type=Sale'),
                 api.get('/sales?type=Usage'),
                 getInventoryItems(),
-                getCategories()
+                getCategories(),
+                getSuppliers()
             ]);
 
-            // Transform snake_case from API to camelCase for frontend
-            const transformSale = (sale: any): Sale => ({
-                id: sale.id,
-                itemName: sale.item_name,
-                quantity: sale.quantity,
-                type: sale.type,
-                date: sale.date,
-                total: sale.total,
-            });
-
-            setSalesData((salesRes.sales || []).map(transformSale));
-            setUsageData((usageRes.sales || []).map(transformSale));
+            setSalesData(salesRes.sales || []);
+            setUsageData(usageRes.sales || []);
             setInventoryItems(items);
             setCategories(cats);
+            setSuppliers(sups);
         } catch (error) {
             console.error('Error fetching sales data:', error);
         } finally {
@@ -65,26 +59,16 @@ export default function SalesPage() {
         setRefreshKey(prev => prev + 1);
     };
 
-    const handleNewSale = (newSale: any) => {
-        // Transform snake_case from API to camelCase for frontend
-        const transformedSale: Sale = {
-            id: newSale.id,
-            itemName: newSale.item_name,
-            quantity: newSale.quantity,
-            type: newSale.type,
-            date: newSale.date,
-            total: newSale.total,
-        };
-
-        if (transformedSale.type === 'Sale') {
-            setSalesData(prev => [transformedSale, ...prev]);
+    const handleNewSale = (newSale: Sale) => {
+        if (newSale.type === 'Sale') {
+            setSalesData(prev => [newSale, ...prev]);
         } else {
-            setUsageData(prev => [transformedSale, ...prev]);
+            setUsageData(prev => [newSale, ...prev]);
         }
         // Also update inventory items to reflect the reduced quantity
         setInventoryItems(prev => prev.map(item => {
-            if (item.name === transformedSale.itemName) {
-                return { ...item, quantity: item.quantity - transformedSale.quantity };
+            if (item.name === newSale.item_name) {
+                return { ...item, quantity: item.quantity - newSale.quantity };
             }
             return item;
         }));
@@ -113,7 +97,7 @@ export default function SalesPage() {
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
             <div className="flex items-center justify-between">
                 <h1 className="font-semibold text-lg md:text-2xl">Sales / Usage</h1>
-                <TransactionForm categories={categories} inventoryItems={inventoryItems} onSaleAdded={handleNewSale}>
+                <TransactionForm categories={categories} inventoryItems={inventoryItems} suppliers={suppliers} onSaleAdded={handleNewSale}>
                     <Button>Record Transaction</Button>
                 </TransactionForm>
             </div>
@@ -131,7 +115,7 @@ export default function SalesPage() {
                                 <FileWarning className="h-16 w-16 text-muted-foreground" />
                                 <h3 className="text-xl font-bold tracking-tight">No sales recorded</h3>
                                 <p className="text-sm text-muted-foreground">Start by recording your first sale.</p>
-                                <TransactionForm categories={categories} inventoryItems={inventoryItems} onSaleAdded={handleNewSale}>
+                                <TransactionForm categories={categories} inventoryItems={inventoryItems} suppliers={suppliers} onSaleAdded={handleNewSale}>
                                     <Button>Record Sale</Button>
                                 </TransactionForm>
                             </div>
@@ -147,7 +131,7 @@ export default function SalesPage() {
                                 <FileWarning className="h-16 w-16 text-muted-foreground" />
                                 <h3 className="text-xl font-bold tracking-tight">No usage recorded</h3>
                                 <p className="text-sm text-muted-foreground">Start by recording your first item usage.</p>
-                                <TransactionForm categories={categories} inventoryItems={inventoryItems} onSaleAdded={handleNewSale}>
+                                <TransactionForm categories={categories} inventoryItems={inventoryItems} suppliers={suppliers} onSaleAdded={handleNewSale}>
                                     <Button>Record Usage</Button>
                                 </TransactionForm>
                             </div>

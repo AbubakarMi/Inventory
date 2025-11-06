@@ -32,7 +32,8 @@ export type EnrichedCategory = Category & {
 
 export type Sale = {
     id?: string;
-    itemName: string;
+    item_id?: string;
+    item_name: string;
     quantity: number;
     type: 'Sale' | 'Usage';
     date: string;

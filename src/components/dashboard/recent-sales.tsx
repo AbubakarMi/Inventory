@@ -30,11 +30,11 @@ export function RecentSales({ sales }: { sales: Sale[] }) {
         <div key={sale.id} className="flex items-center gap-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-slate-50 hover:to-transparent dark:hover:from-slate-800/50 dark:hover:to-transparent transition-all duration-200 border-2 border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-md">
           <Avatar className="h-11 w-11 ring-2 ring-primary/20 shadow-sm">
             <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-bold text-sm">
-              {sale.itemName ? sale.itemName.substring(0, 2).toUpperCase() : 'IT'}
+              {sale.item_name ? sale.item_name.substring(0, 2).toUpperCase() : 'IT'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm md:text-base font-bold leading-none truncate text-slate-900 dark:text-slate-50">{sale.itemName || 'Unknown Item'}</p>
+            <p className="text-sm md:text-base font-bold leading-none truncate text-slate-900 dark:text-slate-50">{sale.item_name || 'Unknown Item'}</p>
             <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1.5 font-medium">
               {new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>

@@ -27,13 +27,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import type { InventoryItem, Category } from "@/lib/types"
+import type { InventoryItem, Category, Supplier } from "@/lib/types"
 import { addSale } from "@/lib/services/sales"
 
 type TransactionFormProps = {
   children: React.ReactNode;
   categories: Category[];
   inventoryItems: InventoryItem[];
+  suppliers: Supplier[];
   onSuccess?: () => void;
 }
 
@@ -43,9 +44,10 @@ const transactionSchema = z.object({
   itemName: z.string().min(1, "Please select an item."),
   quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
   date: z.string().min(1, "Please select a date."),
+  supplier: z.string().optional(),
 })
 
-export function TransactionForm({ children, categories, inventoryItems, onSuccess }: TransactionFormProps) {
+export function TransactionForm({ children, categories, inventoryItems, suppliers, onSuccess }: TransactionFormProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -61,6 +63,7 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
       itemName: "",
       quantity: 1,
       date: today,
+      supplier: "",
     },
   });
 
@@ -72,6 +75,17 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
     if (!selectedCategory || !inventoryItems) return [];
     return inventoryItems.filter(item => item.category === selectedCategory);
   }, [selectedCategory, inventoryItems]);
+
+  const filteredSuppliers = React.useMemo(() => {
+    if (!selectedItem || !suppliers) return [];
+    // Filter suppliers that match the item's supplier field
+    if (selectedItem.supplier) {
+      return suppliers.filter(supplier =>
+        supplier.name.toLowerCase() === selectedItem.supplier?.toLowerCase()
+      );
+    }
+    return [];
+  }, [selectedItem, suppliers]);
 
   const selectedItem = React.useMemo(() => {
     if (!selectedItemName || !inventoryItems) return null;
@@ -88,7 +102,12 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
 
   React.useEffect(() => {
     form.setValue("itemName", "");
+    form.setValue("supplier", "");
   }, [selectedCategory, form]);
+
+  React.useEffect(() => {
+    form.setValue("supplier", "");
+  }, [selectedItemName, form]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -99,6 +118,7 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
         itemName: "",
         quantity: 1,
         date: today,
+        supplier: "",
       })
     }
   }, [isOpen, form])
@@ -112,7 +132,8 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
         const total = Number(item.price || 0) * Number(values.quantity);
 
         await addSale({
-            itemName: item.name,
+            item_id: item.id,
+            item_name: item.name,
             quantity: values.quantity,
             type: values.type,
             date: values.date,
@@ -259,6 +280,44 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
                   className="bg-muted/50 cursor-not-allowed text-slate-900 dark:text-slate-100 font-medium"
                 />
               </div>
+            )}
+
+            {selectedItem && (
+              <FormField
+                control={form.control}
+                name="supplier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supplier (Optional)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={!selectedItemName || isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={filteredSuppliers.length === 0 ? "No suppliers found" : "Select a supplier"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {filteredSuppliers.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">No suppliers found for this item</div>
+                        ) : (
+                          filteredSuppliers.map(supplier => (
+                            <SelectItem
+                              key={supplier.id || supplier.name}
+                              value={supplier.name}
+                            >
+                              {supplier.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             <FormField

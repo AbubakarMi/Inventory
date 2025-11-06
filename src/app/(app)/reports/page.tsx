@@ -63,7 +63,7 @@ export default function ReportsPage() {
         const costOfGoodsSold = sales
             .filter(sale => sale.type === 'Sale')
             .reduce((sum, sale) => {
-                const item = inventoryItems.find(i => i.name === sale.itemName);
+                const item = inventoryItems.find(i => i.name === sale.item_name);
                 return sum + (item ? Number(item.cost) * Number(sale.quantity) : 0);
             }, 0);
 
@@ -161,7 +161,7 @@ export default function ReportsPage() {
         const salesData = [
             ['Item Name', 'Quantity', 'Type', 'Date', 'Total'],
             ...sales.map((sale: any) => [
-                sale.itemName || sale.item_name,
+                sale.item_name,
                 sale.quantity,
                 sale.type,
                 new Date(sale.date).toLocaleDateString(),

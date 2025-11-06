@@ -38,18 +38,8 @@ export default function DashboardPage() {
           api.get('/suppliers'),
         ]);
 
-        // Transform snake_case from API to camelCase for frontend
-        const transformSale = (sale: any): Sale => ({
-          id: sale.id,
-          itemName: sale.item_name,
-          quantity: sale.quantity,
-          type: sale.type,
-          date: sale.date,
-          total: sale.total,
-        });
-
         setInventoryItems(inventoryRes.items || []);
-        setSales((salesRes.sales || []).map(transformSale));
+        setSales(salesRes.sales || []);
         setUsers(usersRes.users || []);
         setSuppliers(suppliersRes.suppliers || []);
       } catch (error) {
@@ -145,14 +135,14 @@ export default function DashboardPage() {
     // This is a simplified version of top selling items based on sales records
     const salesByItem: { [key: string]: { quantity: number; profit: number } } = {};
     sales.forEach(sale => {
-        const item = inventoryItems.find(i => i.name === sale.itemName);
+        const item = inventoryItems.find(i => i.name === sale.item_name);
         if (item) {
             const profit = sale.total - (sale.quantity * item.cost);
-            if (!salesByItem[sale.itemName]) {
-                salesByItem[sale.itemName] = { quantity: 0, profit: 0 };
+            if (!salesByItem[sale.item_name]) {
+                salesByItem[sale.item_name] = { quantity: 0, profit: 0 };
             }
-            salesByItem[sale.itemName].quantity += sale.quantity;
-            salesByItem[sale.itemName].profit += profit;
+            salesByItem[sale.item_name].quantity += sale.quantity;
+            salesByItem[sale.item_name].profit += profit;
         }
     });
     const topSellingItems = Object.entries(salesByItem)

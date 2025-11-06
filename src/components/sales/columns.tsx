@@ -48,9 +48,9 @@ export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => vo
     
     return [
       {
-        accessorKey: "itemName",
+        accessorKey: "item_name",
         header: "Item Name",
-        cell: ({ row }: { row: { original: Sale } }) => <div className="font-medium">{row.original.itemName}</div>,
+        cell: ({ row }: { row: { original: Sale } }) => <div className="font-medium">{row.original.item_name}</div>,
       },
       {
         accessorKey: "quantity",
