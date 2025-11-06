@@ -11,13 +11,13 @@ import { useDoc } from './firestore/use-doc';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCz2C2J3narD7Jmqi5Xpj16dYNzUGuI_2k",
-  authDomain: "inventory-956da.firebaseapp.com",
-  projectId: "inventory-956da",
-  storageBucket: "inventory-956da.appspot.com",
-  messagingSenderId: "764174985892",
-  appId: "1:764174985892:web:9519f3157a072703dd1431",
-  measurementId: "G-N8EMT26EYD"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 type FirebaseInstances = {

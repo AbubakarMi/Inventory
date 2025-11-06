@@ -16,7 +16,7 @@ import {
 import { UserDetailsModal } from "./user-details-modal"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
 import { UserModal } from "./user-modal"
-import { deleteUser, updateUser } from "@/firebase/services/users"
+import { deleteUser, updateUser } from "@/lib/services/users"
 import { useToast } from "@/hooks/use-toast"
 
 export type ColumnDef<TData> = {
@@ -25,8 +25,8 @@ export type ColumnDef<TData> = {
   cell: (props: { row: { original: TData } }) => React.ReactNode
 }
 
-export const getColumns = (toast: (options: Toast) => void): ColumnDef<User>[] => {
-    
+export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => void): ColumnDef<User>[] => {
+
     const handleDelete = async (user: User) => {
         if (!user.id) return;
         try {
@@ -35,6 +35,11 @@ export const getColumns = (toast: (options: Toast) => void): ColumnDef<User>[] =
                 title: "Success!",
                 description: `User "${user.name}" has been deleted.`,
             });
+
+            // Call refresh callback if provided
+            if (onRefresh) {
+                onRefresh();
+            }
         } catch (error) {
             console.error("Error deleting user:", error);
             toast({
@@ -54,6 +59,11 @@ export const getColumns = (toast: (options: Toast) => void): ColumnDef<User>[] =
                 title: "Success!",
                 description: `User "${user.name}" has been ${newStatus.toLowerCase()}.`,
             });
+
+            // Call refresh callback if provided
+            if (onRefresh) {
+                onRefresh();
+            }
         } catch (error) {
             console.error("Error updating user status:", error);
             toast({
@@ -110,7 +120,7 @@ export const getColumns = (toast: (options: Toast) => void): ColumnDef<User>[] =
                         View
                     </button>
                 </UserDetailsModal>
-                 <UserModal userToEdit={user}>
+                 <UserModal userToEdit={user} onSuccess={onRefresh}>
                     <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         Edit
                     </button>

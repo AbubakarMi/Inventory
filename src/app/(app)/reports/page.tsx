@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,26 +9,42 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Download } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts"
-import { initializeFirebase, useCollection } from "@/firebase";
-import { collection, query } from "firebase/firestore";
+import { api } from "@/lib/api-client";
 import type { Sale, InventoryItem, ChartData } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const chartConfig = {
-  value: { 
+  value: {
     label: "Sales",
     color: "hsl(var(--primary))",
   },
 }
 
 export default function ReportsPage() {
-    const { firestore } = initializeFirebase();
+    const [sales, setSales] = useState<Sale[]>([]);
+    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales')) : null, [firestore]);
-    const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
-    
-    const { data: sales, loading: loadingSales } = useCollection<Sale>(salesQuery);
-    const { data: inventoryItems, loading: loadingInventory } = useCollection<InventoryItem>(inventoryQuery);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [salesRes, inventoryRes] = await Promise.all([
+                    api.get('/sales'),
+                    api.get('/inventory'),
+                ]);
+                setSales(salesRes.sales || []);
+                setInventoryItems(inventoryRes.items || []);
+            } catch (error) {
+                console.error('Error fetching reports data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     const { totalRevenue, costOfGoodsSold, netProfit, salesChartData } = useMemo(() => {
         if (!sales || !inventoryItems) {
@@ -72,7 +88,92 @@ export default function ReportsPage() {
 
     }, [sales, inventoryItems]);
 
-    const loading = loadingSales || loadingInventory;
+    const exportToPDF = () => {
+        const doc = new jsPDF();
+
+        // Add title
+        doc.setFontSize(20);
+        doc.text('Inventory Report', 14, 22);
+
+        // Add date
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+        // Add financial summary
+        doc.setFontSize(14);
+        doc.text('Profit/Loss Summary', 14, 45);
+        doc.setFontSize(10);
+        doc.text(`Total Revenue: ₦${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 55);
+        doc.text(`Cost of Goods Sold: ₦${costOfGoodsSold.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 62);
+        doc.text(`Net Profit: ₦${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 69);
+
+        // Add inventory table
+        const inventoryData = inventoryItems.map(item => [
+            item.name,
+            item.category,
+            `${item.quantity} ${item.unit}`,
+            `₦${(item.quantity * item.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ]);
+
+        autoTable(doc, {
+            startY: 80,
+            head: [['Item', 'Category', 'Quantity', 'Inventory Value']],
+            body: inventoryData,
+            theme: 'grid',
+            headStyles: { fillColor: [15, 23, 42] },
+        });
+
+        // Save the PDF
+        doc.save(`inventory-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
+    const exportToExcel = () => {
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Financial Summary sheet
+        const summaryData = [
+            ['Profit/Loss Summary'],
+            [],
+            ['Total Revenue', totalRevenue],
+            ['Cost of Goods Sold', costOfGoodsSold],
+            ['Net Profit', netProfit],
+        ];
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Financial Summary');
+
+        // Inventory Report sheet
+        const inventoryData = [
+            ['Item', 'Category', 'Quantity', 'Unit', 'Cost per Unit', 'Inventory Value'],
+            ...inventoryItems.map(item => [
+                item.name,
+                item.category,
+                item.quantity,
+                item.unit,
+                item.cost,
+                item.quantity * item.cost
+            ])
+        ];
+        const inventoryWs = XLSX.utils.aoa_to_sheet(inventoryData);
+        XLSX.utils.book_append_sheet(wb, inventoryWs, 'Inventory Report');
+
+        // Sales Data sheet
+        const salesData = [
+            ['Item Name', 'Quantity', 'Type', 'Date', 'Total'],
+            ...sales.map((sale: any) => [
+                sale.itemName || sale.item_name,
+                sale.quantity,
+                sale.type,
+                new Date(sale.date).toLocaleDateString(),
+                Number(sale.total || 0)
+            ])
+        ];
+        const salesWs = XLSX.utils.aoa_to_sheet(salesData);
+        XLSX.utils.book_append_sheet(wb, salesWs, 'Sales Data');
+
+        // Save the Excel file
+        XLSX.writeFile(wb, `inventory-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
 
     if (loading) {
         return (
@@ -128,11 +229,11 @@ export default function ReportsPage() {
                 <h1 className="font-semibold text-lg md:text-2xl">Reports</h1>
                 <div className="flex items-center gap-2">
                     <DateRangePicker />
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={exportToPDF}>
                         <Download className="h-4 w-4 mr-2" />
                         Export PDF
                     </Button>
-                     <Button variant="outline">
+                     <Button variant="outline" onClick={exportToExcel}>
                         <Download className="h-4 w-4 mr-2" />
                         Export Excel
                     </Button>

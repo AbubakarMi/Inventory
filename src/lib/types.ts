@@ -13,18 +13,21 @@ export type InventoryItem = {
     expiry?: string;
     supplier?: string;
     threshold: number;
+    grade?: 'A' | 'B' | 'C';
 };
 
 export type Category = {
-    id?: string;
+    id?: string | number;
     name: string;
     parent: string | null;
+    parent_id?: number | null;
 };
 
 export type EnrichedCategory = Category & {
     itemCount: number;
     totalStock: number;
     unit: string;
+    children?: EnrichedCategory[];
 };
 
 export type Sale = {
@@ -63,8 +66,9 @@ export type PieChartData = {
 
 export type Supplier = {
     id?: string;
-    name:string;
-    contact: string;
+    name: string;
+    phone: string;
+    address: string;
     products: string[];
     rating: number;
 };

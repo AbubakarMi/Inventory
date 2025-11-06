@@ -28,23 +28,32 @@ import {
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
 import type { User } from "@/lib/types"
-import { updateUser } from "@/firebase/services/users";
-// NOTE: We don't import addUser because that requires a server-side flow for security.
+import { updateUser, addUser } from "@/lib/services/users";
 
 type UserModalProps = {
   children: React.ReactNode;
   userToEdit?: User;
+  onSuccess?: () => void;
 }
 
-const userSchema = z.object({
+const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   role: z.enum(["Admin", "Manager", "Staff", "Storekeeper"], { required_error: "Role is required" }),
-  // For new users, password is required. For edits, it's optional.
-  password: z.string().min(8, "Password must be at least 8 characters long").optional().or(z.literal('')),
-  confirmPassword: z.string().optional(),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+const editUserSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  role: z.enum(["Admin", "Manager", "Staff", "Storekeeper"], { required_error: "Role is required" }),
+  password: z.string().optional().or(z.literal('')),
+  confirmPassword: z.string().optional().or(z.literal('')),
 }).refine(data => {
-    // If there is a password, it must match confirmPassword
     if(data.password && data.password.length > 0) {
         return data.password === data.confirmPassword;
     }
@@ -54,22 +63,18 @@ const userSchema = z.object({
   path: ["confirmPassword"],
 });
 
-
-export function UserModal({ children, userToEdit }: UserModalProps) {
+export function UserModal({ children, userToEdit, onSuccess }: UserModalProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = React.useState(false);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const title = userToEdit ? "Edit User" : "Add New User";
-    const description = userToEdit ? "Update the user's details." : "To add a user, use your Firebase console for security. This form is for editing existing users.";
+    const description = userToEdit ? "Update the user's details." : "Create a new user account with a secure password.";
 
-    // Adjust schema for editing - password is not required
-    const editUserSchema = userSchema.extend({
-        password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal('')),
-    });
-    
-    const form = useForm<z.infer<typeof userSchema>>({
-        resolver: zodResolver(userToEdit ? editUserSchema : userSchema),
+    const schema = userToEdit ? editUserSchema : createUserSchema;
+
+    const form = useForm<z.infer<typeof schema>>({
+        resolver: zodResolver(schema),
         defaultValues: userToEdit ? { ...userToEdit, password: '', confirmPassword: ''} : {
             name: "",
             email: "",
@@ -91,21 +96,11 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
         }
     }, [userToEdit, form, isOpen]);
 
-    async function onSubmit(values: z.infer<typeof userSchema>) {
-        if (!userToEdit) {
-            toast({
-                variant: "destructive",
-                title: "Not Implemented",
-                description: "User creation must be done via a secure backend process. This form is for edits only.",
-            })
-            return;
-        }
-
+    async function onSubmit(values: z.infer<typeof schema>) {
         setIsSubmitting(true);
         try {
             if (userToEdit?.id) {
-                // We only need to send fields that can be changed.
-                // Password changes would require a separate, more secure flow.
+                // Update existing user
                 await updateUser(userToEdit.id, {
                     name: values.name,
                     role: values.role
@@ -114,7 +109,24 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                     title: "Success!",
                     description: `User "${values.name}" has been updated.`,
                 });
-                setIsOpen(false);
+            } else {
+                // Create new user with password
+                await addUser({
+                    name: values.name,
+                    email: values.email,
+                    role: values.role,
+                    password: values.password
+                });
+                toast({
+                    title: "Success!",
+                    description: `User "${values.name}" has been created.`,
+                });
+            }
+            setIsOpen(false);
+
+            // Call custom onSuccess callback if provided
+            if (onSuccess) {
+                onSuccess();
             }
         } catch (error: any) {
              toast({
@@ -162,7 +174,7 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                                <Input type="email" {...field} disabled={true} />
+                                <Input type="email" {...field} disabled={isSubmitting || !!userToEdit} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -191,6 +203,36 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                         </FormItem>
                     )}
                 />
+                 {!userToEdit && (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" {...field} disabled={isSubmitting} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Confirm Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" {...field} disabled={isSubmitting} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </>
+                 )}
                  {userToEdit && (
                     <p className="text-sm text-muted-foreground pt-2">Password can be changed by the user in their settings.</p>
                  )}
@@ -198,8 +240,8 @@ export function UserModal({ children, userToEdit }: UserModalProps) {
                     <DialogClose asChild>
                         <Button type="button" variant="outline" disabled={isSubmitting}>Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" disabled={isSubmitting || !userToEdit}>
-                        {isSubmitting ? "Saving..." : "Save Changes"}
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Saving..." : userToEdit ? "Save Changes" : "Create User"}
                     </Button>
                 </DialogFooter>
             </form>

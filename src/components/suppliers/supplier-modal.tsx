@@ -33,32 +33,36 @@ import { useSubmit } from "@/hooks/use-submit";
 type SupplierModalProps = {
   children: React.ReactNode;
   supplierToEdit?: Supplier;
+  onSuccess?: () => void;
 }
 
 const supplierSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  contact: z.string().min(1, "Contact is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  address: z.string().min(1, "Address is required"),
   products: z.string().min(1, "At least one product is required"),
   rating: z.number().min(0).max(5),
 });
 
-export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) {
+export function SupplierModal({ children, supplierToEdit, onSuccess }: SupplierModalProps) {
     const form = useForm<z.infer<typeof supplierSchema>>({
         resolver: zodResolver(supplierSchema),
     });
-    
+
     const { isOpen, setIsOpen, handleSubmit, isSubmitting } = useSubmit({
         form,
         formatValues: (values) => ({ ...values, products: values.products.split(',').map(p => p.trim()).filter(Boolean) }),
         entity: 'Supplier',
-        id: supplierToEdit?.id
+        id: supplierToEdit?.id,
+        onSuccess
     });
 
     React.useEffect(() => {
         if(isOpen) {
             const defaultValues = supplierToEdit ? { ...supplierToEdit, products: supplierToEdit.products.join(', ') } : {
                 name: "",
-                contact: "",
+                phone: "",
+                address: "",
                 products: "",
                 rating: 3,
             };
@@ -98,12 +102,25 @@ export function SupplierModal({ children, supplierToEdit }: SupplierModalProps) 
                 />
                  <FormField
                     control={form.control}
-                    name="contact"
+                    name="phone"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Contact Info</FormLabel>
+                            <FormLabel>Phone Number</FormLabel>
                             <FormControl>
-                                <Input {...field} placeholder="e.g. contact@greenfarms.com" disabled={isSubmitting} />
+                                <Input {...field} placeholder="e.g. +1 234 567 8900" disabled={isSubmitting} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                                <Input {...field} placeholder="e.g. 123 Farm Road, City" disabled={isSubmitting} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

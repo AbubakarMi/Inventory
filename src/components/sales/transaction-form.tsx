@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -28,14 +27,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import type { Sale, InventoryItem, Category } from "@/lib/types"
-import { addSale, updateSale } from "@/firebase/services/sales"
-import { initializeFirebase, useCollection } from "@/firebase"
-import { collection, query, getDocs } from "firebase/firestore"
+import type { InventoryItem, Category } from "@/lib/types"
+import { addSale } from "@/lib/services/sales"
 
-type TransactionModalProps = {
+type TransactionFormProps = {
   children: React.ReactNode;
-  transactionToEdit?: Sale;
+  categories: Category[];
+  inventoryItems: InventoryItem[];
+  onSuccess?: () => void;
 }
 
 const transactionSchema = z.object({
@@ -45,29 +44,14 @@ const transactionSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
 })
 
-export function TransactionModal({ children, transactionToEdit }: TransactionModalProps) {
-  const { firestore } = initializeFirebase();
-  
-  const inventoryQuery = React.useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
-  const categoriesQuery = React.useMemo(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
-
-  const { data: inventoryItems } = useCollection<InventoryItem>(inventoryQuery);
-  const { data: categories } = useCollection<Category>(categoriesQuery);
-
+export function TransactionForm({ children, categories, inventoryItems, onSuccess }: TransactionFormProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const defaultCategory = transactionToEdit && inventoryItems ? inventoryItems.find(i => i.name === transactionToEdit.itemName)?.category : "";
-
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: transactionToEdit ? {
-        type: transactionToEdit.type,
-        category: defaultCategory,
-        itemName: transactionToEdit.itemName,
-        quantity: transactionToEdit.quantity,
-    } : {
+    defaultValues: {
       type: "Sale",
       category: "",
       itemName: "",
@@ -88,35 +72,20 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
     return inventoryItems.find(item => item.id === selectedItemName);
   }, [selectedItemName, inventoryItems]);
 
-
   React.useEffect(() => {
-      if (!transactionToEdit || selectedCategory !== defaultCategory) {
-        form.setValue("itemName", "");
-    }
-  }, [selectedCategory, form, transactionToEdit, defaultCategory]);
+    form.setValue("itemName", "");
+  }, [selectedCategory, form]);
 
   React.useEffect(() => {
     if (isOpen) {
-        if (transactionToEdit && inventoryItems) {
-            const defaultCat = inventoryItems?.find(i => i.name === transactionToEdit.itemName)?.category;
-            const item = inventoryItems?.find(i => i.name === transactionToEdit.itemName);
-            form.reset({
-                type: transactionToEdit.type,
-                category: defaultCat || "",
-                itemName: item?.id || "",
-                quantity: transactionToEdit.quantity,
-            })
-        } else {
-            form.reset({
-                type: "Sale",
-                category: "",
-                itemName: "",
-                quantity: 1,
-            })
-        }
+      form.reset({
+        type: "Sale",
+        category: "",
+        itemName: "",
+        quantity: 1,
+      })
     }
-  }, [transactionToEdit, form, isOpen, inventoryItems])
-
+  }, [isOpen, form])
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     setIsSubmitting(true);
@@ -124,25 +93,21 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
         const item = inventoryItems?.find(i => i.id === values.itemName);
         if (!item?.id) throw new Error("Item not found");
 
-        if (transactionToEdit?.id) {
-            // Note: updating a sale does not currently re-adjust inventory.
-            await updateSale(transactionToEdit.id, {
-                ...values,
-                itemName: item.name,
-                total: values.quantity * item.price,
-            });
-        } else {
-            await addSale({
-                itemName: item.name,
-                quantity: values.quantity,
-                type: values.type,
-            });
-        }
+        await addSale({
+            itemName: item.name,
+            quantity: values.quantity,
+            type: values.type,
+        });
+
         toast({
             title: "Success!",
-            description: `Transaction has been ${transactionToEdit ? 'updated' : 'recorded'} successfully.`,
+            description: "Transaction has been recorded successfully.",
         });
         setIsOpen(false);
+
+        if (onSuccess) {
+            onSuccess();
+        }
     } catch(error: any) {
         console.error(error);
         toast({
@@ -155,9 +120,6 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
     }
   }
 
-  const title = transactionToEdit ? "Edit Transaction" : "Record Transaction";
-  const description = transactionToEdit ? "Update the details of this transaction." : "Select an item and enter the details of the transaction.";
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -165,9 +127,9 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>Record Transaction</DialogTitle>
           <DialogDescription>
-            {description}
+            Select an item and enter the details of the transaction
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -203,6 +165,7 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="category"
@@ -211,67 +174,80 @@ export function TransactionModal({ children, transactionToEdit }: TransactionMod
                   <FormLabel>Category</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories?.map(cat => (
-                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                      ))}
+                      {categories && categories.length > 0 ? (
+                        categories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground">No categories found</div>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-             <FormField
+
+            <FormField
               control={form.control}
               name="itemName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Item</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory || isSubmitting}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory || isSubmitting}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder={selectedCategory ? "Select an item" : "Select a category first"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                        {filteredItems.map(item => (
-                            <SelectItem key={item.id} value={item.id!}>{item.name} ({item.quantity} {item.unit} in stock)</SelectItem>
-                        ))}
+                      {filteredItems.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground">No items found in this category</div>
+                      ) : (
+                        filteredItems.map(item => (
+                          <SelectItem key={item.id} value={item.name}>
+                            {item.name} ({item.quantity} {item.unit} in stock)
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
-                  </Select>
+                  </Select>c
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="quantity"
               render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                        <Input type="number" {...field} disabled={isSubmitting} max={selectedItem?.quantity} />
-                    </FormControl>
-                    {selectedItem && field.value > selectedItem.quantity && (
-                         <p className="text-sm font-medium text-destructive">
-                            Cannot sell more than available stock ({selectedItem.quantity}).
-                         </p>
-                    )}
-                    <FormMessage />
+                  <FormLabel>Quantity</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} disabled={isSubmitting} max={selectedItem?.quantity} />
+                  </FormControl>
+                  {selectedItem && field.value > selectedItem.quantity && (
+                    <p className="text-sm font-medium text-destructive">
+                      Cannot sell more than available stock ({selectedItem.quantity}).
+                    </p>
+                  )}
+                  <FormMessage />
                 </FormItem>
               )}
             />
+
             <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="outline" disabled={isSubmitting}>Cancel</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isSubmitting || (selectedItem && form.getValues("quantity") > selectedItem.quantity)}>
-                    {isSubmitting ? "Submitting..." : "Submit"}
-                </Button>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" disabled={isSubmitting}>Cancel</Button>
+              </DialogClose>
+              <Button type="submit" disabled={isSubmitting || (selectedItem && form.getValues("quantity") > selectedItem.quantity)}>
+                {isSubmitting ? "Submitting..." : "Submit"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

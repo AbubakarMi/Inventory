@@ -7,14 +7,15 @@ import { Button } from "../ui/button"
 import { MoreHorizontal } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
-import { deleteInventoryItem } from "@/firebase/services/inventory"
+import { deleteInventoryItem } from "@/lib/services/inventory"
 
 type ColumnsProps = {
     categories: Category[];
     toast: (options: Toast) => void;
+    onRefresh?: () => void;
 }
 
-export const getColumns = ({ categories, toast }: ColumnsProps) => {
+export const getColumns = ({ categories, toast, onRefresh }: ColumnsProps) => {
     
     const handleDelete = async (item: InventoryItem) => {
         if (!item.id) return;
@@ -24,6 +25,11 @@ export const getColumns = ({ categories, toast }: ColumnsProps) => {
                 title: "Success!",
                 description: `Item "${item.name}" has been deleted.`,
             });
+
+            // Call refresh callback if provided
+            if (onRefresh) {
+                onRefresh();
+            }
         } catch (error) {
             console.error("Error deleting item:", error);
             toast({
@@ -78,7 +84,7 @@ export const getColumns = ({ categories, toast }: ColumnsProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <ItemModal itemToEdit={item} categories={categories}>
+                    <ItemModal itemToEdit={item} categories={categories} onSuccess={onRefresh}>
                         <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                             Edit
                         </button>
