@@ -3,39 +3,69 @@
 
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
-import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, PartyPopper, Users, FileText, PlusCircle, PenSquare, PackageX, CalendarClock, Truck } from "lucide-react"
+import { AlertCircle, X, Package, AlertTriangle, ShoppingCart, BarChart, Users, FileText, PlusCircle, PenSquare, PackageX, CalendarClock, Truck } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import StatCard from "@/components/dashboard/stat-card"
 import { TopProductsTable } from "@/components/dashboard/top-products-table"
 import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdown-chart"
+import { SalesTrendChart } from "@/components/dashboard/sales-trend-chart"
+import { StockLevelsChart } from "@/components/dashboard/stock-levels-chart"
 import { RecentSales } from "@/components/dashboard/recent-sales"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { initializeFirebase, useCollection, useUser } from "@/firebase"
-import { collection, query } from "firebase/firestore"
+import { api } from "@/lib/api-client"
+import { useAuth } from "@/contexts/AuthContext"
 import type { InventoryItem, Sale, User as AppUser, PieChartData, Supplier } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
 import { isBefore, addDays } from "date-fns"
 
 export default function DashboardPage() {
-  const { firestore } = initializeFirebase();
-  const { user } = useUser();
+  const { currentUser } = useAuth();
 
-  const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
-  const salesQuery = useMemo(() => firestore ? query(collection(firestore, 'sales')) : null, [firestore]);
-  const usersQuery = useMemo(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
-  const suppliersQuery = useMemo(() => firestore ? query(collection(firestore, 'suppliers')) : null, [firestore]);
-  
-  const { data: inventoryItems, loading: loadingInventory } = useCollection<InventoryItem>(inventoryQuery);
-  const { data: sales, loading: loadingSales } = useCollection<Sale>(salesQuery);
-  const { data: users, loading: loadingUsers } = useCollection<AppUser>(usersQuery);
-  const { data: suppliers, loading: loadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [inventoryRes, salesRes, usersRes, suppliersRes] = await Promise.all([
+          api.get('/inventory'),
+          api.get('/sales'),
+          api.get('/users').catch(() => ({ users: [] })), // May fail for non-admin users
+          api.get('/suppliers'),
+        ]);
+
+        // Transform snake_case from API to camelCase for frontend
+        const transformSale = (sale: any): Sale => ({
+          id: sale.id,
+          itemName: sale.item_name,
+          quantity: sale.quantity,
+          type: sale.type,
+          date: sale.date,
+          total: sale.total,
+        });
+
+        setInventoryItems(inventoryRes.items || []);
+        setSales((salesRes.sales || []).map(transformSale));
+        setUsers(usersRes.users || []);
+        setSuppliers(suppliersRes.suppliers || []);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
 
   const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
-  const [isWelcomeAlertVisible, setIsWelcomeAlertVisible] = useState(true);
 
-  const userRole = user?.claims?.role;
+  const userRole = currentUser?.role;
 
   const { 
       totalItems, 
@@ -120,20 +150,15 @@ export default function DashboardPage() {
 
   }, [inventoryItems, sales, users, suppliers]);
 
-  const loading = loadingInventory || loadingSales || loadingUsers || loadingSuppliers;
-
   const isAdmin = userRole === 'Admin';
   const isManager = userRole === 'Manager';
 
+  // Simplified stat cards - only show the most important metrics
   const statCards = [
-    { title: "Total Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager"], link: "/inventory", description: "Across all items" },
-    { title: "Total Sales", value: `₦${totalSalesValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"], link: "/sales", description: "This month" },
-    { title: "Total Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory", description: "Sum of all quantities" },
-    { title: "Low Stock Items", value: lowStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory?status=low", description: "Items below threshold", variant: "warning" },
-    { title: "Out of Stock Items", value: outOfStockItems, icon: <PackageX />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], link: "/inventory?status=out", description: "Items to restock", variant: "destructive" },
-    { title: "Expiring Soon", value: expiringSoon, icon: <CalendarClock />, roles: ["Admin", "Manager", "Storekeeper"], link: "/inventory?status=expiring", description: "Items expiring in 7 days" },
-    { title: "Total Users", value: totalUsers, icon: <Users />, roles: ["Admin"], link: "/users", description: "System-wide users" },
-    { title: "Total Suppliers", value: totalSuppliers, icon: <Truck />, roles: ["Admin", "Manager"], link: "/suppliers", description: "All registered suppliers" },
+    { title: "Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager"], linkHref: "/inventory", description: "Total stock value" },
+    { title: "Total Sales", value: `₦${totalSalesValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"], linkHref: "/sales", description: "All-time revenue" },
+    { title: "Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], linkHref: "/inventory", description: "Total quantity" },
+    { title: "Low Stock Alerts", value: lowStockItems + outOfStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], linkHref: "/inventory?status=low", description: "Needs attention", variant: lowStockItems + outOfStockItems > 0 ? "warning" : "default" },
   ].filter(card => userRole && card.roles.includes(userRole));
 
 
@@ -161,42 +186,26 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-8">
+    <div className="flex flex-1 flex-col gap-4 md:gap-5">
       <div className="flex items-center justify-between">
-          <h1 className="font-semibold text-lg md:text-2xl">Dashboard</h1>
+          <div>
+            <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-slate-900 dark:text-slate-50">Dashboard</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1.5">Overview of your inventory and operations</p>
+          </div>
       </div>
 
-       {isWelcomeAlertVisible && (
-        <Alert className="relative bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800">
-          <PartyPopper className="h-4 w-4 text-green-600 dark:text-green-400" />
-          <div className="ml-3">
-            <AlertTitle className="font-semibold text-green-800 dark:text-green-200">Welcome back!</AlertTitle>
-            <AlertDescription className="text-green-700 dark:text-green-300">
-              You have successfully logged in. Here's your farm's overview.
-            </AlertDescription>
-          </div>
-           <button
-            onClick={() => setIsWelcomeAlertVisible(false)}
-            className="absolute top-2 right-2 p-1 rounded-full text-green-800 dark:text-green-200 hover:bg-green-100 dark:hover:bg-green-800/50"
-            aria-label="Dismiss"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </Alert>
-      )}
-
       {isLowStockAlertVisible && lowStockItems > 0 && (
-        <Alert variant="warning" className="relative">
-          <AlertCircle className="h-4 w-4" />
+        <Alert variant="warning" className="relative shadow-sm">
+          <AlertCircle className="h-5 w-5" />
           <div className="ml-3">
             <AlertTitle className="font-semibold">Low Stock Alert!</AlertTitle>
-            <AlertDescription>
-              You have {lowStockItems} items running low on stock.
+            <AlertDescription className="text-sm">
+              You have {lowStockItems} items running low on stock. Please reorder soon.
             </AlertDescription>
           </div>
            <button
             onClick={() => setIsLowStockAlertVisible(false)}
-            className="absolute top-2 right-2 p-1 rounded-full hover:bg-yellow-200 dark:hover:bg-yellow-800/50"
+            className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
             aria-label="Dismiss"
           >
             <X className="h-4 w-4" />
@@ -204,52 +213,117 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Key Metrics - Cleaner 4-column grid */}
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map(card => (
           <StatCard key={card.title} {...card} />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 grid gap-4">
-          <RecentSales sales={(sales || []).slice(0, 5)} />
+      {/* Main Content Area - Enhanced chart layout */}
+      <div className="grid gap-4 md:gap-5 lg:grid-cols-3">
+        {/* Left Column - Charts */}
+        <div className="lg:col-span-2 space-y-4 md:space-y-5">
+          <CategoryBreakdownChart data={categoryBreakdown} />
+          <div className="grid gap-4 md:gap-5 md:grid-cols-2">
+            { (isAdmin || isManager) && <SalesTrendChart sales={sales} /> }
+            <StockLevelsChart items={inventoryItems} />
+          </div>
           { (isAdmin || isManager) && <TopProductsTable items={topSellingItems} /> }
         </div>
-         <div className="lg:col-span-1 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+
+        {/* Right Column - Summary & Actions */}
+        <div className="lg:col-span-1 space-y-4 md:space-y-5">
+          <RecentSales sales={(sales || []).slice(0, 5)} />
+
+          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-2">
               <Link href="/inventory" passHref>
-                <Button variant="outline" className="w-full">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                  <PlusCircle className="h-5 w-5" />
+                  <span className="text-xs font-medium">Add Item</span>
                 </Button>
               </Link>
               <Link href="/sales" passHref>
-                <Button variant="outline" className="w-full">
-                  <PenSquare className="mr-2 h-4 w-4" /> Record Sale
+                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                  <PenSquare className="h-5 w-5" />
+                  <span className="text-xs font-medium">Record Sale</span>
                 </Button>
               </Link>
               { (isAdmin || isManager) && (
                 <Link href="/reports" passHref>
-                  <Button variant="outline" className="w-full">
-                    <FileText className="mr-2 h-4 w-4" /> Reports
+                  <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-xs font-medium">Reports</span>
                   </Button>
                 </Link>
               )}
               { isAdmin && (
                 <Link href="/users" passHref>
-                  <Button variant="outline" className="w-full">
-                    <Users className="mr-2 h-4 w-4" /> Users
+                  <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                    <Users className="h-5 w-5" />
+                    <span className="text-xs font-medium">Manage Users</span>
                   </Button>
                 </Link>
               )}
+              <Link href="/suppliers" passHref>
+                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                  <Truck className="h-5 w-5" />
+                  <span className="text-xs font-medium">Suppliers</span>
+                </Button>
+              </Link>
+              <Link href="/categories" passHref>
+                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                  <Package className="h-5 w-5" />
+                  <span className="text-xs font-medium">Categories</span>
+                </Button>
+              </Link>
             </CardContent>
           </Card>
-          
-          <CategoryBreakdownChart data={categoryBreakdown} />
-          
+
+          {/* Stock Status Summary */}
+          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Stock Status</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <span className="text-slate-600 dark:text-slate-400">In Stock</span>
+                  <span className="font-semibold text-green-600 dark:text-green-500">{inventoryItems.filter(i => i.status === 'In Stock').length} items</span>
+                </div>
+                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <span className="text-slate-600 dark:text-slate-400">Low Stock</span>
+                  <span className="font-semibold text-yellow-600 dark:text-yellow-500">{lowStockItems} items</span>
+                </div>
+                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <span className="text-slate-600 dark:text-slate-400">Out of Stock</span>
+                  <span className="font-semibold text-red-600 dark:text-red-500">{outOfStockItems} items</span>
+                </div>
+                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <span className="text-slate-600 dark:text-slate-400">Expiring Soon</span>
+                  <span className="font-semibold text-orange-600 dark:text-orange-500">{expiringSoon} items</span>
+                </div>
+              </div>
+              { (isAdmin || isManager) && (
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <span className="text-slate-600 dark:text-slate-400">Total Suppliers</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-50">{totalSuppliers}</span>
+                  </div>
+                  { isAdmin && (
+                    <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors mt-1">
+                      <span className="text-slate-600 dark:text-slate-400">Total Users</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-50">{totalUsers}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

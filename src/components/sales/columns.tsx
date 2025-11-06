@@ -12,9 +12,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { TransactionModal } from "./transaction-modal"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
-import { deleteSale } from "@/firebase/services/sales"
+import { deleteSale } from "@/lib/services/sales"
 import { useToast } from "@/hooks/use-toast"
 
 export type ColumnDef<TData> = {
@@ -23,7 +22,7 @@ export type ColumnDef<TData> = {
   cell: (props: { row: { original: TData } }) => React.ReactNode
 }
 
-export const getColumns = (toast: (options: Toast) => void) => {
+export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => void) => {
     const handleDelete = async (transaction: Sale) => {
         if (!transaction.id) return;
         try {
@@ -32,6 +31,11 @@ export const getColumns = (toast: (options: Toast) => void) => {
                 title: "Success!",
                 description: `Transaction record has been deleted.`,
             });
+
+            // Call refresh callback if provided
+            if (onRefresh) {
+                onRefresh();
+            }
         } catch (error) {
             console.error("Error deleting transaction:", error);
             toast({
@@ -69,7 +73,7 @@ export const getColumns = (toast: (options: Toast) => void) => {
       {
         accessorKey: "total",
         header: "Total Amount",
-        cell: ({ row }: { row: { original: Sale } }) => <div>₦{row.original.total.toFixed(2)}</div>,
+        cell: ({ row }: { row: { original: Sale } }) => <div>₦{Number(row.original.total).toFixed(2)}</div>,
       },
       {
         accessorKey: "actions",
@@ -86,11 +90,6 @@ export const getColumns = (toast: (options: Toast) => void) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <TransactionModal transactionToEdit={transaction}>
-                        <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                            Edit
-                        </button>
-                    </TransactionModal>
                     <ActionConfirmationDialog
                       title="Are you absolutely sure?"
                       description={`This action cannot be undone. This will permanently delete this transaction record.`}

@@ -1,0 +1,65 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      // Users can read any profile image
+      allow read: if isAuthenticated();
+
+      // Users can only upload their own profile image
+      // Must be an image and under 5MB
+      allow write: if isAuthenticated()
+                   && request.auth.uid == userId
+                   && isImage()
+                   && isUnder5MB();
+    }
+
+    // Product/Inventory images
+    match /inventory/{itemId}/{fileName} {
+      // All authenticated users can read inventory images
+      allow read: if isAuthenticated();
+
+      // Admins, Managers, and Storekeepers can upload inventory images
+      // Must be an image and under 5MB
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isUnder5MB();
+    }
+
+    // Category images
+    match /categories/{categoryId}/{fileName} {
+      // All authenticated users can read category images
+      allow read: if isAuthenticated();
+
+      // Admins and Managers can upload category images
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isUnder5MB();
+    }
+
+    // Exports (CSV, PDF, etc.)
+    match /exports/{userId}/{fileName} {
+      // Users can only read their own exports
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      // Users can create their own exports
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+
+      // Auto-delete after 24 hours (handled by Cloud Functions)
+    }
+  }
+}

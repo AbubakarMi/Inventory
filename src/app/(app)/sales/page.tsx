@@ -2,36 +2,95 @@
 "use client"
 
 import * as React from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from "@/components/data-table";
 import { getColumns } from "@/components/sales/columns";
-import { TransactionModal } from "@/components/sales/transaction-modal";
-import { initializeFirebase, useCollection } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
-import type { Sale } from "@/lib/types";
+import { TransactionForm } from "@/components/sales/transaction-form";
+import { api } from "@/lib/api-client";
+import type { Sale, InventoryItem, Category } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileWarning } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getInventoryItems } from "@/lib/services/inventory";
+import { getCategories } from "@/lib/services/categories";
 
 export default function SalesPage() {
-    const { firestore } = initializeFirebase();
     const { toast } = useToast();
-    const columns = React.useMemo(() => getColumns(toast), [toast]);
 
+    const [salesData, setSalesData] = useState<Sale[]>([]);
+    const [usageData, setUsageData] = useState<Sale[]>([]);
+    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    const salesQuery = React.useMemo(() => 
-        firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Sale')) : null
-    , [firestore]);
+    const fetchData = React.useCallback(async () => {
+        try {
+            setLoading(true);
+            const [salesRes, usageRes, items, cats] = await Promise.all([
+                api.get('/sales?type=Sale'),
+                api.get('/sales?type=Usage'),
+                getInventoryItems(),
+                getCategories()
+            ]);
 
-    const usageQuery = React.useMemo(() => 
-        firestore ? query(collection(firestore, 'sales'), where('type', '==', 'Usage')) : null
-    , [firestore]);
+            // Transform snake_case from API to camelCase for frontend
+            const transformSale = (sale: any): Sale => ({
+                id: sale.id,
+                itemName: sale.item_name,
+                quantity: sale.quantity,
+                type: sale.type,
+                date: sale.date,
+                total: sale.total,
+            });
 
-    const { data: salesData, loading: loadingSales } = useCollection<Sale>(salesQuery);
-    const { data: usageData, loading: loadingUsage } = useCollection<Sale>(usageQuery);
+            setSalesData((salesRes.sales || []).map(transformSale));
+            setUsageData((usageRes.sales || []).map(transformSale));
+            setInventoryItems(items);
+            setCategories(cats);
+        } catch (error) {
+            console.error('Error fetching sales data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-    const loading = loadingSales || loadingUsage;
+    useEffect(() => {
+        fetchData();
+    }, [fetchData, refreshKey]);
+
+    const handleRefresh = () => {
+        setRefreshKey(prev => prev + 1);
+    };
+
+    const handleNewSale = (newSale: any) => {
+        // Transform snake_case from API to camelCase for frontend
+        const transformedSale: Sale = {
+            id: newSale.id,
+            itemName: newSale.item_name,
+            quantity: newSale.quantity,
+            type: newSale.type,
+            date: newSale.date,
+            total: newSale.total,
+        };
+
+        if (transformedSale.type === 'Sale') {
+            setSalesData(prev => [transformedSale, ...prev]);
+        } else {
+            setUsageData(prev => [transformedSale, ...prev]);
+        }
+        // Also update inventory items to reflect the reduced quantity
+        setInventoryItems(prev => prev.map(item => {
+            if (item.name === transformedSale.itemName) {
+                return { ...item, quantity: item.quantity - transformedSale.quantity };
+            }
+            return item;
+        }));
+    };
+
+    const columns = useMemo(() => getColumns(toast, handleRefresh), [toast]);
 
     if (loading) {
         return (
@@ -52,11 +111,11 @@ export default function SalesPage() {
 
     return (
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
-             <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
                 <h1 className="font-semibold text-lg md:text-2xl">Sales / Usage</h1>
-                <TransactionModal>
+                <TransactionForm categories={categories} inventoryItems={inventoryItems} onSaleAdded={handleNewSale}>
                     <Button>Record Transaction</Button>
-                </TransactionModal>
+                </TransactionForm>
             </div>
             <Tabs defaultValue="sales">
                 <TabsList>
@@ -64,29 +123,33 @@ export default function SalesPage() {
                     <TabsTrigger value="usage">Usage</TabsTrigger>
                 </TabsList>
                 <TabsContent value="sales">
-                    <DataTable 
-                        columns={columns} 
+                    <DataTable
+                        columns={columns}
                         data={salesData || []}
                         emptyState={
                             <div className="flex flex-col items-center gap-4 text-center py-12">
                                 <FileWarning className="h-16 w-16 text-muted-foreground" />
                                 <h3 className="text-xl font-bold tracking-tight">No sales recorded</h3>
                                 <p className="text-sm text-muted-foreground">Start by recording your first sale.</p>
-                                <TransactionModal><Button>Record Sale</Button></TransactionModal>
+                                <TransactionForm categories={categories} inventoryItems={inventoryItems} onSaleAdded={handleNewSale}>
+                                    <Button>Record Sale</Button>
+                                </TransactionForm>
                             </div>
                         }
                     />
                 </TabsContent>
                 <TabsContent value="usage">
-                    <DataTable 
-                        columns={columns} 
+                    <DataTable
+                        columns={columns}
                         data={usageData || []}
                         emptyState={
                              <div className="flex flex-col items-center gap-4 text-center py-12">
                                 <FileWarning className="h-16 w-16 text-muted-foreground" />
                                 <h3 className="text-xl font-bold tracking-tight">No usage recorded</h3>
                                 <p className="text-sm text-muted-foreground">Start by recording your first item usage.</p>
-                                <TransactionModal><Button>Record Usage</Button></TransactionModal>
+                                <TransactionForm categories={categories} inventoryItems={inventoryItems} onSaleAdded={handleNewSale}>
+                                    <Button>Record Usage</Button>
+                                </TransactionForm>
                             </div>
                         }
                     />

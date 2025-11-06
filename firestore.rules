@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'Admin';
+    }
+
+    function isManager() {
+      return isAuthenticated() && getUserData().role == 'Manager';
+    }
+
+    function isStorekeeper() {
+      return isAuthenticated() && getUserData().role == 'Storekeeper';
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+
+    function canModifyUsers() {
+      return isAdmin() || isManager();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      // Admins and Managers can read all users
+      allow read: if isAuthenticated() && (request.auth.uid == userId || canModifyUsers());
+
+      // Only authenticated users can create their own profile during registration
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+
+      // Users can update their own profile (except role)
+      // Admins and Managers can update any user
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == userId &&
+         request.resource.data.role == resource.data.role) || // Can't change own role
+        canModifyUsers()
+      );
+
+      // Only Admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // Inventory collection
+    match /inventory/{itemId} {
+      // All authenticated users can read inventory
+      allow read: if isAuthenticated();
+
+      // Admins, Managers, and Storekeepers can create/update inventory
+      allow create, update: if isAdmin() || isManager() || isStorekeeper();
+
+      // Only Admins can delete inventory items
+      allow delete: if isAdmin();
+    }
+
+    // Categories collection
+    match /categories/{categoryId} {
+      // All authenticated users can read categories
+      allow read: if isAuthenticated();
+
+      // Admins and Managers can create/update/delete categories
+      allow create, update, delete: if isAdmin() || isManager();
+    }
+
+    // Sales collection
+    match /sales/{saleId} {
+      // All authenticated users can read sales
+      allow read: if isAuthenticated();
+
+      // Admins, Managers, and Storekeepers can create sales
+      allow create: if isAdmin() || isManager() || isStorekeeper();
+
+      // Admins and Managers can update sales
+      allow update: if isAdmin() || isManager();
+
+      // Only Admins can delete sales
+      allow delete: if isAdmin();
+    }
+
+    // Suppliers collection
+    match /suppliers/{supplierId} {
+      // All authenticated users can read suppliers
+      allow read: if isAuthenticated();
+
+      // Admins and Managers can create/update suppliers
+      allow create, update: if isAdmin() || isManager();
+
+      // Only Admins can delete suppliers
+      allow delete: if isAdmin();
+    }
+
+    // Activity logs collection
+    match /activity_logs/{logId} {
+      // Only Admins and Managers can read logs
+      allow read: if isAdmin() || isManager();
+
+      // All authenticated users can create logs (system-generated)
+      allow create: if isAuthenticated();
+
+      // No updates or deletes allowed for logs (immutable audit trail)
+      allow update, delete: if false;
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // System can create notifications
+      allow create: if isAuthenticated();
+
+      // Users can update their own notifications (mark as read)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Users can delete their own notifications
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

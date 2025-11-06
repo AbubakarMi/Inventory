@@ -9,14 +9,15 @@ import type { EnrichedCategory } from "@/lib/types";
 import { CategoryModal } from "./category-modal";
 import { Separator } from "../ui/separator";
 import { ActionConfirmationDialog } from "../action-confirmation-dialog";
-import { deleteCategory } from "@/firebase/services/categories";
+import { deleteCategory } from "@/lib/services/categories";
 import { useToast } from "@/hooks/use-toast";
 
 type CategoryCardProps = {
     category: EnrichedCategory;
+    onRefresh?: () => void;
 }
 
-export function CategoryCard({ category }: CategoryCardProps) {
+export function CategoryCard({ category, onRefresh }: CategoryCardProps) {
     const { toast } = useToast();
 
     const handleDelete = async () => {
@@ -27,6 +28,11 @@ export function CategoryCard({ category }: CategoryCardProps) {
                 title: "Success!",
                 description: `Category "${category.name}" has been deleted.`,
             });
+
+            // Call refresh callback if provided
+            if (onRefresh) {
+                onRefresh();
+            }
         } catch (error) {
             console.error("Error deleting category:", error);
             toast({
@@ -56,7 +62,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                         <CategoryModal categoryToEdit={category}>
+                         <CategoryModal categoryToEdit={category} onSuccess={onRefresh}>
                              <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground">Edit</button>
                         </CategoryModal>
                         <ActionConfirmationDialog

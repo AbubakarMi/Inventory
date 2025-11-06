@@ -15,7 +15,7 @@ export function NotificationsDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="relative h-8 w-8">
+        <Button variant="outline" size="icon" className="relative h-9 w-9 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
           <Bell className="h-4 w-4" />
           <span className="sr-only">Toggle notifications</span>
           {notifications.length > 0 && (

@@ -14,8 +14,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -28,29 +26,24 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { addCategory, updateCategory } from "@/firebase/services/categories"
-import { initializeFirebase, useCollection } from "@/firebase"
-import { collection, query } from "firebase/firestore"
+import { addCategory, updateCategory } from "@/lib/services/categories"
 import type { Category } from "@/lib/types"
 
 type CategoryModalProps = {
   children: React.ReactNode;
   categoryToEdit?: Category;
+  onSuccess?: () => void;
 }
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
-  parent: z.string().nullable(),
 })
 
-export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) {
-  const { firestore } = initializeFirebase()
-  const categoriesQuery = React.useMemo(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
-  const { data: categories } = useCollection<Category>(categoriesQuery);
+export function CategoryModal({ children, categoryToEdit, onSuccess }: CategoryModalProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  
+
   const form = useForm<z.infer<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
   });
@@ -59,7 +52,6 @@ export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) 
     if (isOpen) {
       form.reset(categoryToEdit || {
         name: "",
-        parent: null,
       });
     }
   }, [isOpen, categoryToEdit, form]);
@@ -80,6 +72,11 @@ export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) 
         description: `Category "${values.name}" has been ${categoryToEdit ? 'updated' : 'added'}.`
       });
       setIsOpen(false);
+
+      // Call custom onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch(error: any) {
       console.error(error);
       toast({
@@ -111,37 +108,10 @@ export function CategoryModal({ children, categoryToEdit }: CategoryModalProps) 
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Category Name</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isSubmitting} />
+                    <Input {...field} placeholder="e.g. Grains, Vegetables, Equipment" disabled={isSubmitting} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="parent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Parent Category</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                    defaultValue={field.value || "none"}
-                    disabled={isSubmitting}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a parent (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {(categories || []).filter(c => c.id !== categoryToEdit?.id).map(cat => (
-                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

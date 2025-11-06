@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { InventoryItem, Category } from "@/lib/types"
+import type { InventoryItem, Category, Supplier } from "@/lib/types"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -29,32 +29,48 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
-import { addInventoryItem, updateInventoryItem } from "@/firebase/services/inventory"
+import { addInventoryItem, updateInventoryItem } from "@/lib/services/inventory"
+import { getSuppliers } from "@/lib/services/suppliers"
 
 type ItemModalProps = {
   children: React.ReactNode;
   itemToEdit?: InventoryItem;
   categories: Category[];
+  onSuccess?: () => void;
 }
 
 const itemSchema = z.object({
   name: z.string().min(1, "Item name is required"),
   category: z.string().min(1, "Category is required"),
   quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
-  unit: z.string().min(1, "Unit is required"),
+  unit: z.enum(["kg", "bags", "tons"], { required_error: "Please select a unit" }),
   cost: z.coerce.number().min(0, "Cost price cannot be negative"),
   price: z.coerce.number().min(0, "Selling price cannot be negative"),
   expiry: z.string().optional(),
   supplier: z.string().optional(),
   threshold: z.coerce.number().min(0, "Threshold cannot be negative"),
+  grade: z.enum(["A", "B", "C"], { required_error: "Please select a grade" }),
 })
 
 type ItemFormValues = z.infer<typeof itemSchema>;
 
-export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) {
+export function ItemModal({ children, itemToEdit, categories, onSuccess }: ItemModalProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
+
+  React.useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const data = await getSuppliers();
+        setSuppliers(data);
+      } catch (error) {
+        console.error('Error fetching suppliers:', error);
+      }
+    };
+    fetchSuppliers();
+  }, []);
 
   const title = itemToEdit ? "Edit Item" : "Add New Item";
   const description = itemToEdit ? "Update the details of your inventory item." : "Fill in the details to add a new item to your inventory.";
@@ -62,22 +78,24 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemSchema),
   })
-  
+
   React.useEffect(() => {
     if (isOpen) {
       form.reset(itemToEdit ? {
         ...itemToEdit,
         expiry: itemToEdit.expiry ? new Date(itemToEdit.expiry).toISOString().split('T')[0] : '',
+        grade: itemToEdit.grade || 'A',
       } : {
         name: "",
         category: "",
         quantity: 0,
-        unit: "",
+        unit: "kg",
         cost: 0,
         price: 0,
         expiry: "",
         supplier: "",
         threshold: 10,
+        grade: "A",
       });
     }
   }, [isOpen, itemToEdit, form]);
@@ -95,6 +113,11 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
         description: `Item "${values.name}" has been ${itemToEdit ? 'updated' : 'added'}.`,
       })
       setIsOpen(false);
+
+      // Call custom onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error("Failed to save item:", error);
       toast({
@@ -112,7 +135,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[625px]">
+      <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
@@ -140,7 +163,7 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-4">
                   <FormLabel className="text-right">Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                     <FormControl>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a category" />
@@ -175,10 +198,19 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                 name="unit"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Unit (e.g. kg, lbs)</FormLabel>
-                        <FormControl>
-                            <Input {...field} disabled={isSubmitting} />
-                        </FormControl>
+                        <FormLabel>Unit</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                            <SelectItem value="bags">Bags</SelectItem>
+                            <SelectItem value="tons">Tons</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                     </FormItem>
                 )}
@@ -212,12 +244,34 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
                 )}
                 />
             </div>
+            <FormField
+              control={form.control}
+              name="grade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quality Grade</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="A">Grade A (Premium)</SelectItem>
+                      <SelectItem value="B">Grade B (Standard)</SelectItem>
+                      <SelectItem value="C">Grade C (Basic)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
              <FormField
               control={form.control}
               name="expiry"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Expiry Date</FormLabel>
+                  <FormLabel>Expiry Date (Optional)</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} disabled={isSubmitting} />
                   </FormControl>
@@ -231,9 +285,18 @@ export function ItemModal({ children, itemToEdit, categories }: ItemModalProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Supplier (Optional)</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled={isSubmitting} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a supplier" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {suppliers.map(supplier => (
+                        <SelectItem key={supplier.id} value={supplier.name}>{supplier.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

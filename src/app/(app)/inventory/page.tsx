@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/data-table"
 import { getColumns } from "@/components/inventory/columns"
@@ -9,23 +9,47 @@ import { ItemModal } from "@/components/inventory/item-modal"
 import { Input } from "@/components/ui/input"
 import { Search, PackageSearch } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { initializeFirebase, useCollection } from "@/firebase"
-import { collection, query } from "firebase/firestore"
+import { api } from "@/lib/api-client"
 import type { InventoryItem, Category } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 export default function InventoryPage() {
-  const { firestore } = initializeFirebase();
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [selectedCategory, setSelectedCategory] = React.useState('All');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const { toast } = useToast();
-  
-  const inventoryQuery = useMemo(() => firestore ? query(collection(firestore, 'inventory')) : null, [firestore]);
-  const categoriesQuery = useMemo(() => firestore ? query(collection(firestore, 'categories')) : null, [firestore]);
-  
-  const { data: inventoryItems, loading: loadingItems } = useCollection<InventoryItem>(inventoryQuery);
-  const { data: categories, loading: loadingCategories } = useCollection<Category>(categoriesQuery);
+
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingItems, setLoadingItems] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchData = React.useCallback(async () => {
+    try {
+      setLoadingItems(true);
+      setLoadingCategories(true);
+      const [inventoryRes, categoriesRes] = await Promise.all([
+        api.get('/inventory'),
+        api.get('/categories'),
+      ]);
+      setInventoryItems(inventoryRes.items || []);
+      setCategories(categoriesRes.categories || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoadingItems(false);
+      setLoadingCategories(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData, refreshKey]);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   const allCategories = useMemo(() => categories ? [{ id: 'all', name: 'All' }, ...categories] : [{id: 'all', name: 'All' }], [categories]);
 
@@ -40,7 +64,7 @@ export default function InventoryPage() {
       );
   }, [inventoryItems, searchTerm, selectedCategory]);
 
-  const columns = useMemo(() => getColumns({ categories: categories || [], toast }), [categories, toast]);
+  const columns = useMemo(() => getColumns({ categories: categories || [], toast, onRefresh: handleRefresh }), [categories, toast]);
 
   if (loadingItems || loadingCategories) {
     return (
@@ -85,7 +109,7 @@ export default function InventoryPage() {
               ))}
             </SelectContent>
           </Select>
-          <ItemModal categories={categories || []}>
+          <ItemModal categories={categories || []} onSuccess={handleRefresh}>
             <Button className="whitespace-nowrap w-full sm:w-auto">Add Item</Button>
           </ItemModal>
         </div>
@@ -98,7 +122,7 @@ export default function InventoryPage() {
                 <PackageSearch className="h-16 w-16 text-muted-foreground" />
                 <h3 className="text-xl font-bold tracking-tight">No inventory items found</h3>
                 <p className="text-sm text-muted-foreground">Get started by adding your first item.</p>
-                <ItemModal categories={categories || []}>
+                <ItemModal categories={categories || []} onSuccess={handleRefresh}>
                     <Button>Add Item</Button>
                 </ItemModal>
             </div>

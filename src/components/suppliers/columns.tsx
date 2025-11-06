@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
 import { SupplierModal } from "./supplier-modal"
-import { deleteSupplier } from "@/firebase/services/suppliers"
+import { deleteSupplier } from "@/lib/services/suppliers"
 import { useToast } from "@/hooks/use-toast"
 
 export type ColumnDef<TData> = {
@@ -33,7 +33,7 @@ const renderStars = (rating: number) => {
     return <div className="flex items-center gap-0.5">{stars}</div>
 }
 
-export const getColumns = (toast: (options: Toast) => void): ColumnDef<Supplier>[] => {
+export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => void): ColumnDef<Supplier>[] => {
 
     const handleDelete = async (supplier: Supplier) => {
         if (!supplier.id) return;
@@ -43,6 +43,11 @@ export const getColumns = (toast: (options: Toast) => void): ColumnDef<Supplier>
                 title: "Success!",
                 description: `Supplier "${supplier.name}" has been deleted.`,
             });
+
+            // Call refresh callback if provided
+            if (onRefresh) {
+                onRefresh();
+            }
         } catch (error) {
             console.error("Error deleting supplier:", error);
             toast({
@@ -89,7 +94,7 @@ export const getColumns = (toast: (options: Toast) => void): ColumnDef<Supplier>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <SupplierModal supplierToEdit={supplier}>
+                <SupplierModal supplierToEdit={supplier} onSuccess={onRefresh}>
                      <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                         Edit
                     </button>

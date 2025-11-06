@@ -2,24 +2,44 @@
 "use client"
 
 import * as React from "react";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import { getColumns } from "@/components/users/columns";
 import { UserModal } from "@/components/users/user-modal";
-import { initializeFirebase, useCollection } from "@/firebase";
-import { collection, query } from "firebase/firestore";
+import { api } from "@/lib/api-client";
 import type { User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function UsersPage() {
-    const { firestore } = initializeFirebase();
     const { toast } = useToast();
-    const usersQuery = useMemo(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
-    const { data: users, loading } = useCollection<User>(usersQuery);
-    const columns = useMemo(() => getColumns(toast), [toast]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const fetchData = React.useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await api.get('/users');
+            setUsers(response.users || []);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData, refreshKey]);
+
+    const handleRefresh = () => {
+        setRefreshKey(prev => prev + 1);
+    };
+
+    const columns = useMemo(() => getColumns(toast, handleRefresh), [toast]);
 
 
     if (loading) {
@@ -42,7 +62,7 @@ export default function UsersPage() {
         <div className="flex flex-1 flex-col gap-4 md:gap-8">
             <div className="flex items-center justify-between">
                 <h1 className="font-semibold text-lg md:text-2xl">Users</h1>
-                <UserModal>
+                <UserModal onSuccess={handleRefresh}>
                     <Button>Add User</Button>
                 </UserModal>
             </div>
@@ -54,7 +74,7 @@ export default function UsersPage() {
                         <Users2 className="h-16 w-16 text-muted-foreground" />
                         <h3 className="text-xl font-bold tracking-tight">No users found</h3>
                         <p className="text-sm text-muted-foreground">Create your first user to get started.</p>
-                        <UserModal>
+                        <UserModal onSuccess={handleRefresh}>
                             <Button>Add User</Button>
                         </UserModal>
                     </div>

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(del srccontextsAuthContext.tsx)",
+      "Bash(dir:*)",
+      "Bash(del AuthContext.tsx)",
+      "Bash(ren:*)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(nul)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(cmd //c taskkill //PID 41992 //F)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(del \"c:\\Users\\lenovo\\Documents\\Hubuk Tech\\Inventory\\src\\components\\sales\\transaction-modal.tsx\")",
+      "Bash(git add:*)",
+      "Bash(del nul)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

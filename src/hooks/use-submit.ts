@@ -4,23 +4,23 @@
 import * as React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { initializeFirebase } from "@/firebase";
-import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
+import { api } from "@/lib/api-client";
 
 type UseSubmitOptions<T extends Record<string, any>> = {
     form: UseFormReturn<T>;
     formatValues?: (values: T) => any;
     entity: string;
-    id?: string;
+    id?: string | number;
+    onSuccess?: () => void;
 };
 
 export function useSubmit<T extends Record<string, any>>({
     form,
     formatValues,
     entity,
-    id
+    id,
+    onSuccess
 }: UseSubmitOptions<T>) {
-    const { firestore } = initializeFirebase();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = React.useState(false);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -29,21 +29,24 @@ export function useSubmit<T extends Record<string, any>>({
         setIsSubmitting(true);
         try {
             const processedValues = formatValues ? formatValues(values) : values;
-            const collectionName = entity.toLowerCase() + 's';
-            
+            const endpoint = `/${entity.toLowerCase()}s`;
+
             if (id) {
-                const docRef = doc(firestore, collectionName, id);
-                await updateDoc(docRef, processedValues);
+                await api.put(endpoint, { id, ...processedValues });
             } else {
-                const collectionRef = collection(firestore, collectionName);
-                await addDoc(collectionRef, processedValues);
+                await api.post(endpoint, processedValues);
             }
-            
+
             toast({
                 title: "Success!",
                 description: `${entity} has been ${id ? 'updated' : 'created'}.`,
             });
             setIsOpen(false);
+
+            // Call custom onSuccess callback if provided
+            if (onSuccess) {
+                onSuccess();
+            }
         } catch (error: any) {
             console.error(`Failed to save ${entity}:`, error);
             toast({
