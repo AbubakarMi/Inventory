@@ -42,12 +42,16 @@ const transactionSchema = z.object({
   category: z.string().min(1, "Please select a category."),
   itemName: z.string().min(1, "Please select an item."),
   quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
+  date: z.string().min(1, "Please select a date."),
 })
 
 export function TransactionForm({ children, categories, inventoryItems, onSuccess }: TransactionFormProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
 
   const form = useForm<z.infer<typeof transactionSchema>>({
     resolver: zodResolver(transactionSchema),
@@ -56,11 +60,13 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
       category: "",
       itemName: "",
       quantity: 1,
+      date: today,
     },
   });
 
   const selectedCategory = form.watch("category");
   const selectedItemName = form.watch("itemName");
+  const quantity = form.watch("quantity");
 
   const filteredItems = React.useMemo(() => {
     if (!selectedCategory || !inventoryItems) return [];
@@ -72,17 +78,25 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
     return inventoryItems.find(item => item.id === selectedItemName);
   }, [selectedItemName, inventoryItems]);
 
+  // Calculate total price
+  const totalPrice = React.useMemo(() => {
+    if (!selectedItem || !quantity) return 0;
+    return selectedItem.price * quantity;
+  }, [selectedItem, quantity]);
+
   React.useEffect(() => {
     form.setValue("itemName", "");
   }, [selectedCategory, form]);
 
   React.useEffect(() => {
     if (isOpen) {
+      const today = new Date().toISOString().split('T')[0];
       form.reset({
         type: "Sale",
         category: "",
         itemName: "",
         quantity: 1,
+        date: today,
       })
     }
   }, [isOpen, form])
@@ -93,15 +107,19 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
         const item = inventoryItems?.find(i => i.id === values.itemName);
         if (!item?.id) throw new Error("Item not found");
 
+        const total = item.price * values.quantity;
+
         await addSale({
             itemName: item.name,
             quantity: values.quantity,
             type: values.type,
+            date: values.date,
+            total: total,
         });
 
         toast({
             title: "Success!",
-            description: "Transaction has been recorded successfully.",
+            description: `Transaction recorded successfully. Total: ₦${total.toFixed(2)}`,
         });
         setIsOpen(false);
 
@@ -240,6 +258,34 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {selectedItem && quantity > 0 && (
+              <div className="rounded-lg border bg-muted/50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Total Price:</span>
+                  <span className="text-lg font-bold text-primary">
+                    ₦{totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {quantity} {selectedItem.unit} × ₦{selectedItem.price.toFixed(2)}
+                </p>
+              </div>
+            )}
 
             <DialogFooter>
               <DialogClose asChild>

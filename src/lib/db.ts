@@ -187,25 +187,41 @@ export async function initializeDatabase() {
   }
 }
 
-// Seed initial admin user if no users exist
+// Seed initial users if no users exist
 export async function seedAdminUser() {
   try {
-    const result = await query('SELECT COUNT(*) FROM users');
-    const count = parseInt(result.rows[0].count);
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash('admin123', 10);
 
-    if (count === 0) {
-      const bcrypt = require('bcryptjs');
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+    // Create multiple users for different roles
+    const users = [
+      { name: 'Admin User', email: 'admin@farmsight.com', role: 'Admin' },
+      { name: 'Manager User', email: 'manager@farmsight.com', role: 'Manager' },
+      { name: 'Storekeeper User', email: 'storekeeper@farmsight.com', role: 'Storekeeper' },
+      { name: 'Staff User', email: 'staff@farmsight.com', role: 'Staff' },
+    ];
 
-      await query(
-        `INSERT INTO users (name, email, password, role, status, email_verified)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        ['Admin User', 'admin@farmsight.com', hashedPassword, 'Admin', 'Active', true]
-      );
+    for (const user of users) {
+      // Check if user exists
+      const existing = await query('SELECT id FROM users WHERE email = $1', [user.email]);
 
-      console.log('Admin user created: admin@farmsight.com / admin123');
+      if (existing.rows.length === 0) {
+        await query(
+          `INSERT INTO users (name, email, password, role, status, email_verified)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [user.name, user.email, hashedPassword, user.role, 'Active', true]
+        );
+        console.log(`User created: ${user.email} / admin123 (Role: ${user.role})`);
+      } else {
+        // Update password for existing user to ensure consistency
+        await query(
+          `UPDATE users SET password = $1 WHERE email = $2`,
+          [hashedPassword, user.email]
+        );
+        console.log(`User password updated: ${user.email} / admin123 (Role: ${user.role})`);
+      }
     }
   } catch (error) {
-    console.error('Error seeding admin user:', error);
+    console.error('Error seeding users:', error);
   }
 }

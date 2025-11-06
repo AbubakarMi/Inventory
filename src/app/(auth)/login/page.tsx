@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -23,9 +23,17 @@ const loginSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, currentUser, loading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && currentUser) {
+      console.log('User already logged in, redirecting to dashboard')
+      router.replace("/dashboard")
+    }
+  }, [currentUser, loading, router])
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -38,21 +46,57 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setIsLoading(true)
     try {
-      await login(values.email, values.password)
+      console.log('[LOGIN] Starting login attempt for:', values.email)
+      const result = await login(values.email, values.password)
+      console.log('[LOGIN] Login successful, user data received:', result)
+
       toast({
         title: "Login Successful",
         description: "Welcome back to FarmSight!",
       })
-      router.push("/dashboard")
+
+      console.log('[LOGIN] Redirecting to dashboard...')
+      // Use window.location for a hard navigation to avoid cache issues
+      window.location.href = "/dashboard"
     } catch (error: any) {
+      console.error('[LOGIN] Login failed with error:', error)
+      setIsLoading(false)
+
+      // Extract meaningful error message
+      let errorMessage = "Invalid credentials. Please try again."
+      if (error?.message) {
+        if (error.message.includes('timeout') || error.message.includes('408')) {
+          errorMessage = "Request timeout. Please check your connection and try again."
+        } else if (error.message.includes('Network error')) {
+          errorMessage = "Network error. Please check your internet connection."
+        } else {
+          errorMessage = error.message
+        }
+      }
+
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: errorMessage,
       })
-    } finally {
-      setIsLoading(false)
     }
+  }
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't show login form if already logged in
+  if (currentUser) {
+    return null
   }
 
   return (
@@ -193,12 +237,12 @@ export default function LoginPage() {
               </Form>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <div className="text-sm text-center text-muted-foreground">
+              {/* <div className="text-sm text-center text-muted-foreground">
                 Don't have an account?{" "}
                 <Link href="/register" className="text-primary hover:underline font-medium">
                   Create account
                 </Link>
-              </div>
+              </div> */}
             </CardFooter>
           </Card>
 
@@ -209,10 +253,24 @@ export default function LoginPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="mt-6 p-4 bg-muted/50 rounded-lg border"
           >
-            <p className="text-xs font-medium text-muted-foreground mb-2">Demo Credentials:</p>
-            <div className="text-xs space-y-1 text-muted-foreground">
-              <div>Admin: admin@farmsight.com / password123</div>
-              <div>Manager: manager@farmsight.com / password123</div>
+            <p className="text-xs font-semibold text-muted-foreground mb-3">Test Accounts (Password: admin123):</p>
+            <div className="text-xs space-y-2 text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="text-blue-600 dark:text-blue-400 font-semibold min-w-[70px]">Admin:</span>
+                <code className="bg-background px-2 py-0.5 rounded text-foreground">admin@farmsight.com</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-green-600 dark:text-green-400 font-semibold min-w-[70px]">Manager:</span>
+                <code className="bg-background px-2 py-0.5 rounded text-foreground">manager@farmsight.com</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-orange-600 dark:text-orange-400 font-semibold min-w-[70px]">Store:</span>
+                <code className="bg-background px-2 py-0.5 rounded text-foreground">storekeeper@farmsight.com</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-purple-600 dark:text-purple-400 font-semibold min-w-[70px]">Staff:</span>
+                <code className="bg-background px-2 py-0.5 rounded text-foreground">staff@farmsight.com</code>
+              </div>
             </div>
           </motion.div>
         </motion.div>

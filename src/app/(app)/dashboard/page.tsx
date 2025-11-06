@@ -186,46 +186,40 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 md:gap-5">
-      <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-bold text-2xl md:text-3xl tracking-tight text-slate-900 dark:text-slate-50">Dashboard</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1.5">Overview of your inventory and operations</p>
-          </div>
-      </div>
+    <div className="flex flex-1 flex-col gap-8 p-6 md:p-8 lg:p-10 bg-gradient-to-br from-slate-50 via-white to-slate-100/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950/80 min-h-screen">
 
       {isLowStockAlertVisible && lowStockItems > 0 && (
-        <Alert variant="warning" className="relative shadow-sm">
-          <AlertCircle className="h-5 w-5" />
+        <Alert variant="warning" className="relative shadow-xl border-2 border-yellow-300/50 dark:border-yellow-700/50 rounded-2xl bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100/50 dark:from-yellow-950/30 dark:via-orange-950/30 dark:to-yellow-900/20 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-500">
+          <AlertCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
           <div className="ml-3">
-            <AlertTitle className="font-semibold">Low Stock Alert!</AlertTitle>
-            <AlertDescription className="text-sm">
-              You have {lowStockItems} items running low on stock. Please reorder soon.
+            <AlertTitle className="font-bold text-lg text-yellow-900 dark:text-yellow-100">Low Stock Alert!</AlertTitle>
+            <AlertDescription className="text-sm mt-1.5 font-medium text-yellow-800 dark:text-yellow-200">
+              You have <span className="font-bold">{lowStockItems}</span> items running low on stock. Please reorder soon.
             </AlertDescription>
           </div>
            <button
             onClick={() => setIsLowStockAlertVisible(false)}
-            className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-xl hover:bg-yellow-200/80 dark:hover:bg-yellow-900/50 transition-all hover:scale-110 text-yellow-700 dark:text-yellow-300"
             aria-label="Dismiss"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </Alert>
       )}
 
-      {/* Key Metrics - Cleaner 4-column grid */}
-      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Key Metrics - Enhanced 4-column grid */}
+      <div className="grid gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map(card => (
           <StatCard key={card.title} {...card} />
         ))}
       </div>
 
-      {/* Main Content Area - Enhanced chart layout */}
-      <div className="grid gap-4 md:gap-5 lg:grid-cols-3">
+      {/* Main Content Area - World-Class chart layout */}
+      <div className="grid gap-7 md:gap-8 lg:grid-cols-3">
         {/* Left Column - Charts */}
-        <div className="lg:col-span-2 space-y-4 md:space-y-5">
+        <div className="lg:col-span-2 space-y-7 md:space-y-8">
           <CategoryBreakdownChart data={categoryBreakdown} />
-          <div className="grid gap-4 md:gap-5 md:grid-cols-2">
+          <div className="grid gap-7 md:gap-8 md:grid-cols-2">
             { (isAdmin || isManager) && <SalesTrendChart sales={sales} /> }
             <StockLevelsChart items={inventoryItems} />
           </div>
@@ -233,91 +227,91 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Column - Summary & Actions */}
-        <div className="lg:col-span-1 space-y-4 md:space-y-5">
+        <div className="lg:col-span-1 space-y-7 md:space-y-8">
           <RecentSales sales={(sales || []).slice(0, 5)} />
 
-          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Quick Actions</CardTitle>
+          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
+            <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
+              <CardTitle className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-50">Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-2">
+            <CardContent className="grid grid-cols-2 gap-3 pt-6">
               <Link href="/inventory" passHref>
-                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                <Button variant="outline" size="sm" className="w-full h-auto py-5 flex-col gap-2 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-200 rounded-xl border-2">
                   <PlusCircle className="h-5 w-5" />
-                  <span className="text-xs font-medium">Add Item</span>
+                  <span className="text-xs font-semibold">Add Item</span>
                 </Button>
               </Link>
               <Link href="/sales" passHref>
-                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                <Button variant="outline" size="sm" className="w-full h-auto py-5 flex-col gap-2 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-200 rounded-xl border-2">
                   <PenSquare className="h-5 w-5" />
-                  <span className="text-xs font-medium">Record Sale</span>
+                  <span className="text-xs font-semibold">Record Sale</span>
                 </Button>
               </Link>
               { (isAdmin || isManager) && (
                 <Link href="/reports" passHref>
-                  <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                  <Button variant="outline" size="sm" className="w-full h-auto py-5 flex-col gap-2 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-200 rounded-xl border-2">
                     <FileText className="h-5 w-5" />
-                    <span className="text-xs font-medium">Reports</span>
+                    <span className="text-xs font-semibold">Reports</span>
                   </Button>
                 </Link>
               )}
               { isAdmin && (
                 <Link href="/users" passHref>
-                  <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                  <Button variant="outline" size="sm" className="w-full h-auto py-5 flex-col gap-2 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-200 rounded-xl border-2">
                     <Users className="h-5 w-5" />
-                    <span className="text-xs font-medium">Manage Users</span>
+                    <span className="text-xs font-semibold">Manage Users</span>
                   </Button>
                 </Link>
               )}
               <Link href="/suppliers" passHref>
-                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                <Button variant="outline" size="sm" className="w-full h-auto py-5 flex-col gap-2 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-200 rounded-xl border-2">
                   <Truck className="h-5 w-5" />
-                  <span className="text-xs font-medium">Suppliers</span>
+                  <span className="text-xs font-semibold">Suppliers</span>
                 </Button>
               </Link>
               <Link href="/categories" passHref>
-                <Button variant="outline" size="sm" className="w-full h-auto py-4 flex-col gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all">
+                <Button variant="outline" size="sm" className="w-full h-auto py-5 flex-col gap-2 hover:bg-gradient-to-br hover:from-primary/10 hover:to-primary/5 hover:text-primary hover:border-primary hover:shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all duration-200 rounded-xl border-2">
                   <Package className="h-5 w-5" />
-                  <span className="text-xs font-medium">Categories</span>
+                  <span className="text-xs font-semibold">Categories</span>
                 </Button>
               </Link>
             </CardContent>
           </Card>
 
           {/* Stock Status Summary */}
-          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Stock Status</CardTitle>
+          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
+            <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
+              <CardTitle className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-50">Stock Status</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <span className="text-slate-600 dark:text-slate-400">In Stock</span>
-                  <span className="font-semibold text-green-600 dark:text-green-500">{inventoryItems.filter(i => i.status === 'In Stock').length} items</span>
+            <CardContent className="space-y-3 pt-6">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-50/50 dark:hover:from-green-950/30 dark:hover:to-green-950/10 transition-all duration-200 border border-transparent hover:border-green-200 dark:hover:border-green-900">
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">In Stock</span>
+                  <span className="font-bold text-green-600 dark:text-green-500 px-3 py-1 bg-green-100 dark:bg-green-950 rounded-lg">{inventoryItems.filter(i => i.status === 'In Stock').length} items</span>
                 </div>
-                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <span className="text-slate-600 dark:text-slate-400">Low Stock</span>
-                  <span className="font-semibold text-yellow-600 dark:text-yellow-500">{lowStockItems} items</span>
+                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-yellow-50 hover:to-yellow-50/50 dark:hover:from-yellow-950/30 dark:hover:to-yellow-950/10 transition-all duration-200 border border-transparent hover:border-yellow-200 dark:hover:border-yellow-900">
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">Low Stock</span>
+                  <span className="font-bold text-yellow-600 dark:text-yellow-500 px-3 py-1 bg-yellow-100 dark:bg-yellow-950 rounded-lg">{lowStockItems} items</span>
                 </div>
-                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <span className="text-slate-600 dark:text-slate-400">Out of Stock</span>
-                  <span className="font-semibold text-red-600 dark:text-red-500">{outOfStockItems} items</span>
+                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-50/50 dark:hover:from-red-950/30 dark:hover:to-red-950/10 transition-all duration-200 border border-transparent hover:border-red-200 dark:hover:border-red-900">
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">Out of Stock</span>
+                  <span className="font-bold text-red-600 dark:text-red-500 px-3 py-1 bg-red-100 dark:bg-red-950 rounded-lg">{outOfStockItems} items</span>
                 </div>
-                <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <span className="text-slate-600 dark:text-slate-400">Expiring Soon</span>
-                  <span className="font-semibold text-orange-600 dark:text-orange-500">{expiringSoon} items</span>
+                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-50/50 dark:hover:from-orange-950/30 dark:hover:to-orange-950/10 transition-all duration-200 border border-transparent hover:border-orange-200 dark:hover:border-orange-900">
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">Expiring Soon</span>
+                  <span className="font-bold text-orange-600 dark:text-orange-500 px-3 py-1 bg-orange-100 dark:bg-orange-950 rounded-lg">{expiringSoon} items</span>
                 </div>
               </div>
               { (isAdmin || isManager) && (
-                <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <span className="text-slate-600 dark:text-slate-400">Total Suppliers</span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-50">{totalSuppliers}</span>
+                <div className="pt-4 border-t-2 border-slate-200/60 dark:border-slate-800/60 space-y-2">
+                  <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-50/50 dark:hover:from-blue-950/30 dark:hover:to-blue-950/10 transition-all duration-200 border border-transparent hover:border-blue-200 dark:hover:border-blue-900">
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">Total Suppliers</span>
+                    <span className="font-bold text-blue-600 dark:text-blue-500 px-3 py-1 bg-blue-100 dark:bg-blue-950 rounded-lg">{totalSuppliers}</span>
                   </div>
                   { isAdmin && (
-                    <div className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors mt-1">
-                      <span className="text-slate-600 dark:text-slate-400">Total Users</span>
-                      <span className="font-semibold text-slate-900 dark:text-slate-50">{totalUsers}</span>
+                    <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-50/50 dark:hover:from-purple-950/30 dark:hover:to-purple-950/10 transition-all duration-200 border border-transparent hover:border-purple-200 dark:hover:border-purple-900">
+                      <span className="text-slate-700 dark:text-slate-300 font-medium">Total Users</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-500 px-3 py-1 bg-purple-100 dark:bg-purple-950 rounded-lg">{totalUsers}</span>
                     </div>
                   )}
                 </div>

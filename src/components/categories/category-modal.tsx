@@ -27,7 +27,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { addCategory, updateCategory } from "@/lib/services/categories"
-import type { Category } from "@/lib/types"
+import type { Category, Supplier } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getSuppliers } from "@/lib/services/suppliers"
 
 type CategoryModalProps = {
   children: React.ReactNode;
@@ -37,21 +39,36 @@ type CategoryModalProps = {
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
+  supplier: z.string().optional(),
 })
 
 export function CategoryModal({ children, categoryToEdit, onSuccess }: CategoryModalProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
 
   const form = useForm<z.infer<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
   });
 
   React.useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const data = await getSuppliers();
+        setSuppliers(data);
+      } catch (error) {
+        console.error('Error fetching suppliers:', error);
+      }
+    };
+    fetchSuppliers();
+  }, []);
+
+  React.useEffect(() => {
     if (isOpen) {
       form.reset(categoryToEdit || {
         name: "",
+        supplier: "",
       });
     }
   }, [isOpen, categoryToEdit, form]);
@@ -112,6 +129,28 @@ export function CategoryModal({ children, categoryToEdit, onSuccess }: CategoryM
                   <FormControl>
                     <Input {...field} placeholder="e.g. Grains, Vegetables, Equipment" disabled={isSubmitting} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="supplier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supplier (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a supplier" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {suppliers.map(supplier => (
+                        <SelectItem key={supplier.id} value={supplier.name}>{supplier.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

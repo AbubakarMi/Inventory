@@ -30,29 +30,33 @@ export function StockLevelsChart({ items }: StockLevelsChartProps) {
   }, [items])
 
   return (
-    <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300 transition-all duration-300">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Stock Levels by Category</CardTitle>
-        <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
+    <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
+      <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
+        <CardTitle className="text-lg md:text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-50 dark:to-slate-200 bg-clip-text text-transparent">Stock Levels by Category</CardTitle>
+        <CardDescription className="text-sm md:text-base text-slate-600 dark:text-slate-400 font-medium mt-1">
           Current inventory distribution across top categories
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+      <CardContent className="pt-6">
+        <ChartContainer config={chartConfig} className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <BarChart data={chartData} layout="vertical" barSize={32}>
+              <CartesianGrid strokeDasharray="5 5" className="stroke-slate-200 dark:stroke-slate-800" strokeOpacity={0.5} horizontal={false} />
               <XAxis
                 type="number"
-                className="text-xs"
+                className="text-xs md:text-sm font-medium"
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={false}
+                axisLine={false}
               />
               <YAxis
                 type="category"
                 dataKey="category"
-                className="text-xs"
+                className="text-xs md:text-sm font-semibold"
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                width={100}
+                width={110}
+                tickLine={false}
+                axisLine={false}
               />
               <ChartTooltip
                 content={<ChartTooltipContent
@@ -62,7 +66,9 @@ export function StockLevelsChart({ items }: StockLevelsChartProps) {
               <Bar
                 dataKey="quantity"
                 fill="hsl(var(--primary))"
-                radius={[0, 4, 4, 0]}
+                radius={[0, 8, 8, 0]}
+                animationBegin={0}
+                animationDuration={800}
               />
             </BarChart>
           </ResponsiveContainer>

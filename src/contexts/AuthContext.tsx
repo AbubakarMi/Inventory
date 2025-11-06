@@ -72,11 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('[AUTH] Calling login API...');
       const response = await authApi.login(email, password);
+      console.log('[AUTH] Login API successful, user:', response.user);
       setCurrentUser(response.user);
       setUserData(response.user);
+      console.log('[AUTH] User state updated successfully');
+      return response;
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to login');
+      console.error('[AUTH] Login failed:', error);
+      throw error;
     }
   };
 
@@ -151,7 +156,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen bg-background">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

@@ -18,7 +18,13 @@
       "Bash(grep:*)",
       "Bash(del \"c:\\Users\\lenovo\\Documents\\Hubuk Tech\\Inventory\\src\\components\\sales\\transaction-modal.tsx\")",
       "Bash(git add:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(cmd //c taskkill //PID 36088 //F)",
+      "Bash(ping:*)",
+      "Bash(tasklist:*)",
+      "Bash(rd /s /q .next 2)",
+      "Bash(rd /s /q node_modules.cache 2)"
     ],
     "deny": [],
     "ask": []

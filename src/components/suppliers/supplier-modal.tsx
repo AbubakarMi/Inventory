@@ -147,13 +147,13 @@ export function SupplierModal({ children, supplierToEdit, onSuccess }: SupplierM
                     name="rating"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Rating: {field.value} / 5</FormLabel>
+                            <FormLabel>Rating: {field.value || 3} / 5</FormLabel>
                             <FormControl>
-                                <Slider 
+                                <Slider
                                     min={0}
                                     max={5}
                                     step={1}
-                                    defaultValue={[field.value]}
+                                    value={[field.value || 3]}
                                     onValueChange={(value) => field.onChange(value[0])}
                                     disabled={isSubmitting}
                                 />

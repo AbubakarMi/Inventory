@@ -43,7 +43,7 @@ const itemSchema = z.object({
   name: z.string().min(1, "Item name is required"),
   category: z.string().min(1, "Category is required"),
   quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
-  unit: z.enum(["kg", "bags", "tons"], { required_error: "Please select a unit" }),
+  unit: z.string().min(1, "Unit is required"),
   cost: z.coerce.number().min(0, "Cost price cannot be negative"),
   price: z.coerce.number().min(0, "Selling price cannot be negative"),
   expiry: z.string().optional(),
@@ -89,7 +89,7 @@ export function ItemModal({ children, itemToEdit, categories, onSuccess }: ItemM
         name: "",
         category: "",
         quantity: 0,
-        unit: "kg",
+        unit: "",
         cost: 0,
         price: 0,
         expiry: "",
@@ -103,8 +103,12 @@ export function ItemModal({ children, itemToEdit, categories, onSuccess }: ItemM
   async function onSubmit(values: ItemFormValues) {
     setIsSubmitting(true);
     try {
+      // Calculate status based on quantity and threshold
+      const status = values.quantity > values.threshold ? 'In Stock' : values.quantity > 0 ? 'Low Stock' : 'Out of Stock';
+      const itemData = { ...values, status };
+
       if (itemToEdit?.id) {
-        await updateInventoryItem(itemToEdit.id, values);
+        await updateInventoryItem(itemToEdit.id, itemData);
       } else {
         await addInventoryItem(values);
       }
@@ -199,18 +203,9 @@ export function ItemModal({ children, itemToEdit, categories, onSuccess }: ItemM
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>Unit</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select unit" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="kg">Kilograms (kg)</SelectItem>
-                            <SelectItem value="bags">Bags</SelectItem>
-                            <SelectItem value="tons">Tons</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                            <Input {...field} placeholder="e.g. kg, bags, tons, liters" disabled={isSubmitting} />
+                        </FormControl>
                         <FormMessage />
                     </FormItem>
                 )}

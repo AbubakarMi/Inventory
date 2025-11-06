@@ -26,16 +26,16 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
   }, [data])
 
   return (
-    <Card className="flex flex-col bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl transition-shadow duration-300 transition-all duration-300">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Category Breakdown</CardTitle>
-        <CardDescription className="text-sm text-slate-600 dark:text-slate-400">Distribution of items across categories</CardDescription>
+    <Card className="flex flex-col bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
+      <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
+        <CardTitle className="text-xl md:text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-50 dark:to-slate-200 bg-clip-text text-transparent">Category Breakdown</CardTitle>
+        <CardDescription className="text-sm md:text-base text-slate-600 dark:text-slate-400 font-medium mt-1">Distribution of items across categories</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-6">
-        <div className="flex flex-col lg:flex-row items-center gap-6">
+      <CardContent className="flex-1 pb-8 pt-6">
+        <div className="flex flex-col lg:flex-row items-center gap-8">
           <ChartContainer
             config={chartConfig}
-            className="aspect-square w-full max-w-[280px]"
+            className="aspect-square w-full max-w-[320px]"
           >
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -47,10 +47,12 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                   data={data}
                   dataKey="value"
                   nameKey="name"
-                  innerRadius={70}
-                  outerRadius={110}
-                  strokeWidth={2}
-                  paddingAngle={2}
+                  innerRadius={80}
+                  outerRadius={130}
+                  strokeWidth={3}
+                  paddingAngle={4}
+                  animationBegin={0}
+                  animationDuration={800}
                 >
                    <Label
                     content={({ viewBox }) => {
@@ -65,14 +67,14 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                             <tspan
                               x={viewBox.cx}
                               y={viewBox.cy}
-                              className="fill-slate-900 dark:fill-slate-50 text-4xl font-bold"
+                              className="fill-slate-900 dark:fill-slate-50 text-5xl font-extrabold"
                             >
                               {totalValue.toLocaleString()}
                             </tspan>
                             <tspan
                               x={viewBox.cx}
-                              y={(viewBox.cy || 0) + 28}
-                              className="fill-slate-500 dark:fill-slate-400 text-sm"
+                              y={(viewBox.cy || 0) + 32}
+                              className="fill-slate-600 dark:fill-slate-400 text-base font-semibold"
                             >
                               Total Items
                             </tspan>
@@ -86,25 +88,25 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
             </ResponsiveContainer>
           </ChartContainer>
 
-          <div className="flex-1 space-y-3 w-full">
+          <div className="flex-1 space-y-4 w-full">
             {data.map((item) => {
               const percentage = ((item.value / totalValue) * 100).toFixed(1)
               return (
-                <div key={item.name} className="flex items-center gap-3">
+                <div key={item.name} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
                   <div
-                    className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm"
+                    className="w-4 h-4 rounded-full flex-shrink-0 shadow-lg ring-2 ring-white dark:ring-slate-900"
                     style={{ backgroundColor: item.fill }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-50 truncate">{item.name}</span>
-                      <span className="text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-sm md:text-base font-bold text-slate-900 dark:text-slate-50 truncate">{item.name}</span>
+                      <span className="text-sm md:text-base font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
                         {item.value} ({percentage}%)
                       </span>
                     </div>
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-1.5">
+                    <div className="w-full h-3 bg-slate-200/50 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-700 ease-out shadow-sm"
                         style={{
                           width: `${percentage}%`,
                           backgroundColor: item.fill
