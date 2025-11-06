@@ -216,7 +216,7 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
                         ))
                       )}
                     </SelectContent>
-                  </Select>c
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
