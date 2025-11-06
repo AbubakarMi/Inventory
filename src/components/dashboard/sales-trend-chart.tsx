@@ -21,7 +21,7 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
 
     sales.forEach(sale => {
       const date = new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      salesByDate[date] = (salesByDate[date] || 0) + sale.total
+      salesByDate[date] = (salesByDate[date] || 0) + Number(sale.total)
     })
 
     // Get last 7 days or available data
@@ -29,11 +29,11 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
 
     return dates.map(date => ({
       date,
-      sales: salesByDate[date]
+      sales: Number(salesByDate[date])
     }))
   }, [sales])
 
-  const totalSales = chartData.reduce((sum, item) => sum + item.sales, 0)
+  const totalSales = Number(chartData.reduce((sum, item) => sum + Number(item.sales), 0))
 
   return (
     <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
@@ -69,7 +69,7 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
               />
               <ChartTooltip
                 content={<ChartTooltipContent
-                  formatter={(value) => `₦${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                  formatter={(value) => `₦${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 />}
               />
               <Area

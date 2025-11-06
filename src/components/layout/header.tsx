@@ -74,18 +74,8 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-[73px] items-center gap-6 border-b border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950 shadow-[0_0_40px_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_rgba(0,0,0,0.3)] px-6">
+    <header className="sticky top-0 z-30 flex h-[105px] items-center gap-6 border-b border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950 shadow-[0_0_40px_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_rgba(0,0,0,0.3)] px-6">
        {isMobile && <SidebarTrigger className="sm:hidden hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg p-2 transition-all hover:scale-110" />}
-
-      {/* FarmSight Branding */}
-      <div className="flex items-center gap-3">
-        <div className="flex flex-col">
-          <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
-            FarmSight
-          </span>
-          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-widest uppercase">INVENTORY SYSTEM</span>
-        </div>
-      </div>
 
       {/* Breadcrumb & Overview */}
       <div className="hidden md:flex flex-col gap-1 flex-1 max-w-2xl">

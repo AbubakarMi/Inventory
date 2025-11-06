@@ -33,7 +33,7 @@ export async function apiRequest<T = any>(
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
 
-  console.log('[API] Request:', { url, method: options.method || 'GET' });
+  console.log('[API] Request:', { url, method: options.method || 'GET', fullUrl: url });
 
   try {
     // Add timeout to prevent hanging requests

@@ -55,7 +55,7 @@ export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => vo
       {
         accessorKey: "quantity",
         header: "Quantity",
-        cell: ({ row }: { row: { original: Sale } }) => <div>{row.original.quantity}</div>,
+        cell: ({ row }: { row: { original: Sale } }) => <div>{row.original.quantity.toLocaleString('en-US')}</div>,
       },
       {
         accessorKey: "type",
@@ -73,7 +73,7 @@ export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => vo
       {
         accessorKey: "total",
         header: "Total Amount",
-        cell: ({ row }: { row: { original: Sale } }) => <div>₦{Number(row.original.total).toFixed(2)}</div>,
+        cell: ({ row }: { row: { original: Sale } }) => <div>₦{Number(row.original.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>,
       },
       {
         accessorKey: "actions",

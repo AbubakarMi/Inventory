@@ -58,13 +58,13 @@ export default function ReportsPage() {
 
         const totalRevenue = sales
             .filter(sale => sale.type === 'Sale')
-            .reduce((sum, sale) => sum + sale.total, 0);
+            .reduce((sum, sale) => sum + Number(sale.total), 0);
 
         const costOfGoodsSold = sales
             .filter(sale => sale.type === 'Sale')
             .reduce((sum, sale) => {
                 const item = inventoryItems.find(i => i.name === sale.itemName);
-                return sum + (item ? item.cost * sale.quantity : 0);
+                return sum + (item ? Number(item.cost) * Number(sale.quantity) : 0);
             }, 0);
 
         const netProfit = totalRevenue - costOfGoodsSold;
@@ -76,7 +76,7 @@ export default function ReportsPage() {
             if (!dailyTrends[date]) {
                 dailyTrends[date] = 0;
             }
-            dailyTrends[date] += sale.total;
+            dailyTrends[date] += Number(sale.total);
         });
 
         const salesChartData: ChartData[] = Object.entries(dailyTrends)

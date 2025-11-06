@@ -75,13 +75,15 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
 
   const selectedItem = React.useMemo(() => {
     if (!selectedItemName || !inventoryItems) return null;
-    return inventoryItems.find(item => item.id === selectedItemName);
+    // Try to find by ID first, then by name as fallback
+    const found = inventoryItems.find(item => item.id === selectedItemName || item.name === selectedItemName);
+    return found || null;
   }, [selectedItemName, inventoryItems]);
 
   // Calculate total price
   const totalPrice = React.useMemo(() => {
     if (!selectedItem || !quantity) return 0;
-    return selectedItem.price * quantity;
+    return Number(selectedItem.price || 0) * Number(quantity);
   }, [selectedItem, quantity]);
 
   React.useEffect(() => {
@@ -104,10 +106,10 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     setIsSubmitting(true);
     try {
-        const item = inventoryItems?.find(i => i.id === values.itemName);
-        if (!item?.id) throw new Error("Item not found");
+        const item = inventoryItems?.find(i => i.id === values.itemName || i.name === values.itemName);
+        if (!item) throw new Error("Item not found");
 
-        const total = item.price * values.quantity;
+        const total = Number(item.price || 0) * Number(values.quantity);
 
         await addSale({
             itemName: item.name,
@@ -217,9 +219,13 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Item</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCategory || isSubmitting}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!selectedCategory || isSubmitting}
+                  >
                     <FormControl>
-                      <SelectTrigger className="text-slate-900 dark:text-slate-100">
+                      <SelectTrigger>
                         <SelectValue placeholder={selectedCategory ? "Select an item" : "Select a category first"} />
                       </SelectTrigger>
                     </FormControl>
@@ -228,8 +234,11 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
                         <div className="p-2 text-sm text-muted-foreground">No items found in this category</div>
                       ) : (
                         filteredItems.map(item => (
-                          <SelectItem key={item.id} value={item.name}>
-                            {item.name} ({item.quantity} {item.unit} in stock)
+                          <SelectItem
+                            key={item.name}
+                            value={item.name}
+                          >
+                            {item.name}
                           </SelectItem>
                         ))
                       )}
@@ -239,6 +248,18 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
                 </FormItem>
               )}
             />
+
+            {selectedItem && (
+              <div className="grid gap-2">
+                <FormLabel>Available Stock</FormLabel>
+                <Input
+                  type="text"
+                  value={`${selectedItem.quantity} ${selectedItem.unit}`}
+                  disabled
+                  className="bg-muted/50 cursor-not-allowed text-slate-900 dark:text-slate-100 font-medium"
+                />
+              </div>
+            )}
 
             <FormField
               control={form.control}
@@ -274,16 +295,19 @@ export function TransactionForm({ children, categories, inventoryItems, onSucces
             />
 
             {selectedItem && quantity > 0 && (
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Total Price:</span>
-                  <span className="text-lg font-bold text-primary">
-                    ₦{totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+              <div className="grid gap-2">
+                <FormLabel>Total Amount</FormLabel>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={`₦${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    disabled
+                    className="bg-muted/50 cursor-not-allowed font-semibold text-lg text-slate-900 dark:text-slate-100"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {quantity} {selectedItem.unit} × ₦{Number(selectedItem.price || 0).toFixed(2)} per {selectedItem.unit}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {quantity} {selectedItem.unit} × ₦{selectedItem.price.toFixed(2)}
-                </p>
               </div>
             )}
 

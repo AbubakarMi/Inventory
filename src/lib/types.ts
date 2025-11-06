@@ -67,8 +67,7 @@ export type PieChartData = {
 export type Supplier = {
     id?: string;
     name: string;
-    phone: string;
-    address: string;
+    contact: string;
     products: string[];
     rating: number;
 };

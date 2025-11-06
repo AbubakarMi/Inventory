@@ -102,8 +102,8 @@ export default function DashboardPage() {
         item.expiry && isBefore(new Date(item.expiry), addDays(new Date(), 7))
     ).length;
 
-    const inventoryValue = inventoryItems.reduce((sum, item) => sum + item.cost * item.quantity, 0);
-    const totalSalesValue = sales.reduce((sum, sale) => sum + sale.total, 0);
+    const inventoryValue = inventoryItems.reduce((sum, item) => sum + (Number(item.cost) * Number(item.quantity)), 0);
+    const totalSalesValue = sales.reduce((sum, sale) => sum + Number(sale.total), 0);
     const totalUsers = users.length;
     const totalSuppliers = suppliers.length;
 
@@ -112,19 +112,34 @@ export default function DashboardPage() {
         categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
     });
 
+    // Predefined colors for common categories
     const categoryColors: { [key: string]: string } = {
-        'Fruits': 'var(--color-fruits)',
-        'Vegetables': 'var(--color-vegetables)',
-        'Dairy': 'var(--color-dairy)',
-        'Feed': 'var(--color-feed)',
-        'Supplies': 'var(--color-supplies)',
-        'Processed Goods': 'var(--color-processed-goods)',
+        'Fruits': 'hsl(var(--chart-1))',
+        'Vegetables': 'hsl(var(--chart-2))',
+        'Dairy': 'hsl(var(--chart-3))',
+        'Feed': 'hsl(var(--chart-4))',
+        'Supplies': 'hsl(var(--chart-5))',
+        'Processed Goods': 'hsl(var(--destructive))',
     }
 
-    const categoryBreakdown: PieChartData[] = Object.entries(categoryCounts).map(([name, value]) => ({
+    // Dynamic color palette for additional categories
+    const dynamicColors = [
+        'hsl(220, 70%, 50%)',  // Blue
+        'hsl(340, 75%, 55%)',  // Pink
+        'hsl(160, 60%, 45%)',  // Teal
+        'hsl(40, 85%, 55%)',   // Orange
+        'hsl(280, 65%, 55%)',  // Purple
+        'hsl(140, 70%, 45%)',  // Green
+        'hsl(20, 80%, 50%)',   // Red-Orange
+        'hsl(200, 70%, 50%)',  // Sky Blue
+        'hsl(300, 70%, 50%)',  // Magenta
+        'hsl(60, 80%, 50%)',   // Yellow
+    ];
+
+    const categoryBreakdown: PieChartData[] = Object.entries(categoryCounts).map(([name, value], index) => ({
         name,
         value,
-        fill: categoryColors[name] || 'hsl(var(--muted-foreground))',
+        fill: categoryColors[name] || dynamicColors[index % dynamicColors.length],
     }));
     
     // This is a simplified version of top selling items based on sales records
@@ -153,12 +168,22 @@ export default function DashboardPage() {
   const isAdmin = userRole === 'Admin';
   const isManager = userRole === 'Manager';
 
+  // Helper function for consistent currency formatting
+  const formatCurrency = (value: number): string => {
+    return `₦${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Helper function for number formatting with commas
+  const formatNumber = (value: number): string => {
+    return value.toLocaleString('en-US');
+  };
+
   // Simplified stat cards - only show the most important metrics
   const statCards = [
-    { title: "Inventory Value", value: `₦${inventoryValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <Package />, roles: ["Admin", "Manager"], linkHref: "/inventory", description: "Total stock value" },
-    { title: "Total Sales", value: `₦${totalSalesValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <ShoppingCart />, roles: ["Admin", "Manager"], linkHref: "/sales", description: "All-time revenue" },
-    { title: "Items in Stock", value: totalItems.toLocaleString(), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], linkHref: "/inventory", description: "Total quantity" },
-    { title: "Low Stock Alerts", value: lowStockItems + outOfStockItems, icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], linkHref: "/inventory?status=low", description: "Needs attention", variant: lowStockItems + outOfStockItems > 0 ? "warning" : "default" },
+    { title: "Inventory Value", value: formatCurrency(inventoryValue), icon: <Package />, roles: ["Admin", "Manager"], linkHref: "/inventory", description: "Total stock value" },
+    { title: "Total Sales", value: formatCurrency(totalSalesValue), icon: <ShoppingCart />, roles: ["Admin", "Manager"], linkHref: "/sales", description: "All-time revenue" },
+    { title: "Items in Stock", value: formatNumber(totalItems), icon: <BarChart />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], linkHref: "/inventory", description: "Total quantity" },
+    { title: "Low Stock Alerts", value: formatNumber(lowStockItems + outOfStockItems), icon: <AlertTriangle />, roles: ["Admin", "Manager", "Storekeeper", "Staff"], linkHref: "/inventory?status=low", description: "Needs attention", variant: lowStockItems + outOfStockItems > 0 ? "warning" : "default" },
   ].filter(card => userRole && card.roles.includes(userRole));
 
 
@@ -186,7 +211,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-6 md:p-8 lg:p-10 bg-gradient-to-br from-slate-50 via-white to-slate-100/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950/80 min-h-screen">
+    <div className="flex flex-1 flex-col gap-6 md:gap-8 p-4 md:p-6 lg:p-8 max-w-[1920px] mx-auto w-full bg-gradient-to-br from-slate-50 via-white to-slate-100/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950/80 min-h-screen">
 
       {isLowStockAlertVisible && lowStockItems > 0 && (
         <Alert variant="warning" className="relative shadow-xl border-2 border-yellow-300/50 dark:border-yellow-700/50 rounded-2xl bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100/50 dark:from-yellow-950/30 dark:via-orange-950/30 dark:to-yellow-900/20 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-500">
@@ -207,19 +232,19 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      {/* Key Metrics - Enhanced 4-column grid */}
-      <div className="grid gap-5 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Key Metrics - Enhanced responsive grid */}
+      <div className="grid gap-4 md:gap-5 lg:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
         {statCards.map(card => (
           <StatCard key={card.title} {...card} />
         ))}
       </div>
 
-      {/* Main Content Area - World-Class chart layout */}
-      <div className="grid gap-7 md:gap-8 lg:grid-cols-3">
+      {/* Main Content Area - Responsive chart layout */}
+      <div className="grid gap-5 md:gap-6 lg:gap-7 xl:grid-cols-12">
         {/* Left Column - Charts */}
-        <div className="lg:col-span-2 space-y-7 md:space-y-8">
+        <div className="xl:col-span-8 space-y-5 md:space-y-6">
           <CategoryBreakdownChart data={categoryBreakdown} />
-          <div className="grid gap-7 md:gap-8 md:grid-cols-2">
+          <div className="grid gap-5 md:gap-6 md:grid-cols-2">
             { (isAdmin || isManager) && <SalesTrendChart sales={sales} /> }
             <StockLevelsChart items={inventoryItems} />
           </div>
@@ -227,7 +252,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Column - Summary & Actions */}
-        <div className="lg:col-span-1 space-y-7 md:space-y-8">
+        <div className="xl:col-span-4 space-y-5 md:space-y-6">
           <RecentSales sales={(sales || []).slice(0, 5)} />
 
           <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">

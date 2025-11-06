@@ -38,8 +38,7 @@ type SupplierModalProps = {
 
 const supplierSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  phone: z.string().min(1, "Phone number is required"),
-  address: z.string().min(1, "Address is required"),
+  contact: z.string().min(1, "Contact is required"),
   products: z.string().min(1, "At least one product is required"),
   rating: z.number().min(0).max(5),
 });
@@ -59,10 +58,13 @@ export function SupplierModal({ children, supplierToEdit, onSuccess }: SupplierM
 
     React.useEffect(() => {
         if(isOpen) {
-            const defaultValues = supplierToEdit ? { ...supplierToEdit, products: supplierToEdit.products.join(', ') } : {
+            const defaultValues = supplierToEdit ? {
+                ...supplierToEdit,
+                products: supplierToEdit.products.join(', '),
+                rating: Number(supplierToEdit.rating) || 3
+            } : {
                 name: "",
-                phone: "",
-                address: "",
+                contact: "",
                 products: "",
                 rating: 3,
             };
@@ -102,25 +104,12 @@ export function SupplierModal({ children, supplierToEdit, onSuccess }: SupplierM
                 />
                  <FormField
                     control={form.control}
-                    name="phone"
+                    name="contact"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
+                            <FormLabel>Contact</FormLabel>
                             <FormControl>
-                                <Input {...field} placeholder="e.g. +1 234 567 8900" disabled={isSubmitting} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Address</FormLabel>
-                            <FormControl>
-                                <Input {...field} placeholder="e.g. 123 Farm Road, City" disabled={isSubmitting} />
+                                <Input {...field} placeholder="e.g. +1 234 567 8900 or email@example.com" disabled={isSubmitting} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
