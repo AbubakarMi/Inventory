@@ -105,7 +105,7 @@ export default function ForgotPasswordPage() {
             <div className="flex justify-center mb-4">
               <div className="flex items-center gap-2">
                 <Tractor className="h-10 w-10 text-primary" />
-                <span className="text-3xl font-bold">FarmSight</span>
+                <span className="text-2xl font-bold">APS Intertrade</span>
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-center">Forgot Password?</CardTitle>

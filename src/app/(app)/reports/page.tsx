@@ -90,41 +90,141 @@ export default function ReportsPage() {
 
     const exportToPDF = () => {
         const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
 
-        // Add title
-        doc.setFontSize(20);
-        doc.text('Inventory Report', 14, 22);
+        // Colors - simplified
+        const primaryGreen = [45, 122, 62];
+        const darkGray = [50, 50, 50];
+        const lightGray = [100, 100, 100];
 
-        // Add date
+        let yPos = 20;
+
+        // Header - Company Name
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(primaryGreen[0], primaryGreen[1], primaryGreen[2]);
+        doc.text('APS INTERTRADE INVENTORY SYSTEM', 14, yPos);
+
+        // Report Title and Date
+        yPos += 10;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+        doc.text('Inventory Report', 14, yPos);
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(lightGray[0], lightGray[1], lightGray[2]);
+        doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth - 14, yPos, { align: 'right' });
+
+        // Line separator
+        yPos += 5;
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos, pageWidth - 14, yPos);
+
+        // Financial Summary
+        yPos += 10;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+        doc.text('Financial Summary', 14, yPos);
+
+        yPos += 8;
         doc.setFontSize(10);
-        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
 
-        // Add financial summary
-        doc.setFontSize(14);
-        doc.text('Profit/Loss Summary', 14, 45);
-        doc.setFontSize(10);
-        doc.text(`Total Revenue: ₦${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 55);
-        doc.text(`Cost of Goods Sold: ₦${costOfGoodsSold.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 62);
-        doc.text(`Net Profit: ₦${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 69);
+        doc.text('Total Revenue:', 14, yPos);
+        doc.text(`₦${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
 
-        // Add inventory table
+        yPos += 7;
+        doc.text('Cost of Goods Sold:', 14, yPos);
+        doc.text(`₦${costOfGoodsSold.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+
+        yPos += 7;
+        doc.setFont('helvetica', 'bold');
+        const profitColor = netProfit >= 0 ? [45, 122, 62] : [220, 38, 38];
+        doc.setTextColor(profitColor[0], profitColor[1], profitColor[2]);
+        doc.text('Net Profit:', 14, yPos);
+        doc.text(`₦${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+
+        // Inventory Table
+        yPos += 12;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+        doc.text('Inventory Items', 14, yPos);
+
+        yPos += 5;
+
         const inventoryData = inventoryItems.map(item => [
             item.name,
-            item.category,
+            item.category || 'N/A',
             `${item.quantity} ${item.unit}`,
-            `₦${(item.quantity * item.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            item.status || 'N/A',
+            `₦${(item.quantity * item.cost).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]);
 
         autoTable(doc, {
-            startY: 80,
-            head: [['Item', 'Category', 'Quantity', 'Inventory Value']],
+            startY: yPos,
+            head: [['Item', 'Category', 'Qty', 'Status', 'Value']],
             body: inventoryData,
-            theme: 'grid',
-            headStyles: { fillColor: [15, 23, 42] },
+            theme: 'plain',
+            styles: {
+                lineWidth: 0,
+                lineColor: [255, 255, 255],
+                cellPadding: { top: 4, right: 5, bottom: 4, left: 5 },
+                minCellHeight: 7
+            },
+            headStyles: {
+                fillColor: primaryGreen,
+                textColor: [255, 255, 255],
+                fontSize: 9,
+                fontStyle: 'bold',
+                halign: 'left',
+                lineWidth: 0,
+                cellPadding: { top: 4, right: 5, bottom: 4, left: 5 }
+            },
+            bodyStyles: {
+                fontSize: 8,
+                textColor: darkGray,
+                lineWidth: 0,
+                cellPadding: { top: 4, right: 5, bottom: 4, left: 5 }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 248, 248],
+                lineWidth: 0
+            },
+            columnStyles: {
+                0: { cellWidth: 65, lineWidth: 0 },
+                1: { cellWidth: 35, lineWidth: 0 },
+                2: { cellWidth: 25, halign: 'center', lineWidth: 0 },
+                3: { cellWidth: 28, halign: 'center', lineWidth: 0 },
+                4: { cellWidth: 40, halign: 'right', lineWidth: 0 }
+            },
+            margin: { left: 14, right: 14 },
+            tableLineWidth: 0,
+            tableLineColor: [255, 255, 255],
+            didDrawCell: function(data) {
+                // Force all cell borders to be invisible
+                data.cell.styles.lineWidth = 0;
+                data.cell.styles.lineColor = [255, 255, 255];
+            },
+            didDrawPage: function(data) {
+                // Footer
+                const footerY = pageHeight - 10;
+                doc.setFontSize(8);
+                doc.setTextColor(lightGray[0], lightGray[1], lightGray[2]);
+                doc.setFont('helvetica', 'normal');
+                doc.text('APS Intertrade Inventory System', 14, footerY);
+                doc.text(`Page ${doc.internal.pages.length - 1}`, pageWidth - 14, footerY, { align: 'right' });
+            }
         });
 
         // Save the PDF
-        doc.save(`inventory-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`APS-Intertrade-Inventory-Report-${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     const exportToExcel = () => {

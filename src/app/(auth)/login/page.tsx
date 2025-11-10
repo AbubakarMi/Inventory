@@ -52,7 +52,7 @@ export default function LoginPage() {
 
       toast({
         title: "Login Successful",
-        description: "Welcome back to FarmSight!",
+        description: "Welcome back to APS Intertrade Inventory!",
       })
 
       console.log('[LOGIN] Redirecting to dashboard...')
@@ -113,10 +113,10 @@ export default function LoginPage() {
           >
             <div className="flex justify-center items-center gap-3 mb-8">
               <Tractor className="h-16 w-16" />
-              <h1 className="text-6xl font-bold">FarmSight</h1>
+              <h1 className="text-5xl font-bold">APS Intertrade</h1>
             </div>
             <p className="text-xl max-w-md opacity-90">
-              Streamline your agricultural inventory management with intelligent insights and real-time tracking
+              Streamline your inventory management with intelligent insights and real-time tracking
             </p>
             <div className="grid grid-cols-3 gap-8 mt-12 max-w-2xl">
               <div className="text-center">
@@ -149,7 +149,7 @@ export default function LoginPage() {
               <div className="flex justify-center lg:hidden mb-4">
                 <div className="flex items-center gap-2">
                   <Tractor className="h-10 w-10 text-primary" />
-                  <span className="text-3xl font-bold">FarmSight</span>
+                  <span className="text-2xl font-bold">APS Intertrade</span>
                 </div>
               </div>
               <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>

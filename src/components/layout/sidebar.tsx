@@ -86,7 +86,7 @@ export default function AppSidebar() {
             { (state === 'expanded' || isMobile) && (
               <div className="flex flex-col flex-1">
                 <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
-                  FarmSight
+                  APS Intertrade
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold tracking-wide">INVENTORY SYSTEM</span>
               </div>
