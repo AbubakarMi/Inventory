@@ -33,17 +33,20 @@ export async function apiRequest<T = any>(
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
 
-  console.log('[API] Request:', { url, method: options.method || 'GET', fullUrl: url });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[API] Request:', { url, method: options.method || 'GET' });
+  }
 
   try {
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.log('[API] Request timeout after 30s, aborting...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[API] Request timeout after 30s, aborting...');
+      }
       controller.abort();
     }, 30000); // 30 second timeout
 
-    console.log('[API] Sending fetch request...');
     const response = await fetch(url, {
       ...options,
       headers,
@@ -53,15 +56,15 @@ export async function apiRequest<T = any>(
 
     clearTimeout(timeoutId);
 
-    console.log('[API] Response received:', { status: response.status, ok: response.ok });
-
     // Handle empty responses
     const text = await response.text();
-    console.log('[API] Response body length:', text.length);
     const data = text ? JSON.parse(text) : {};
 
     if (!response.ok) {
-      console.error('[API] Error response:', data);
+      // Only log detailed errors in development, and suppress common expected errors
+      if (process.env.NODE_ENV === 'development' && response.status !== 401) {
+        console.error('[API] Error response:', data);
+      }
       throw new ApiError(
         data.error || `HTTP ${response.status}: ${response.statusText}`,
         response.status,
@@ -69,14 +72,16 @@ export async function apiRequest<T = any>(
       );
     }
 
-    console.log('[API] Success:', data);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API] Success:', data);
+    }
     return data as T;
   } catch (error) {
-    console.error('[API] Request failed:', error);
-
     // Handle abort errors specifically
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('[API] Request was aborted due to timeout');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[API] Request was aborted due to timeout');
+      }
       throw new ApiError(
         'Request timeout - please try again',
         408
@@ -84,10 +89,16 @@ export async function apiRequest<T = any>(
     }
 
     if (error instanceof ApiError) {
+      // Don't log expected errors like 401 Unauthorized
+      if (error.status !== 401 && process.env.NODE_ENV === 'development') {
+        console.error('[API] Request failed:', error);
+      }
       throw error;
     }
 
-    console.error('[API] Network or parsing error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[API] Network or parsing error:', error);
+    }
     throw new ApiError(
       error instanceof Error ? error.message : 'Network error - please check your connection',
       0
@@ -128,8 +139,10 @@ export const api = {
 // Auth specific methods
 export const authApi = {
   login: async (email: string, password: string) => {
-    console.log('[AUTH-API] Sending login request to /auth/login');
-    console.log('[AUTH-API] Credentials:', { email, passwordLength: password.length });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AUTH-API] Sending login request to /auth/login');
+      console.log('[AUTH-API] Credentials:', { email, passwordLength: password.length });
+    }
     try {
       const response = await api.post<{
         user: any;
@@ -137,21 +150,27 @@ export const authApi = {
         message: string;
       }>('/auth/login', { email, password });
 
-      console.log('[AUTH-API] Login successful, response received:', {
-        hasUser: !!response.user,
-        hasToken: !!response.token,
-        message: response.message
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AUTH-API] Login successful, response received:', {
+          hasUser: !!response.user,
+          hasToken: !!response.token,
+          message: response.message
+        });
+      }
 
       // Store token
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.token);
-        console.log('[AUTH-API] Token stored in localStorage');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AUTH-API] Token stored in localStorage');
+        }
       }
 
       return response;
     } catch (error) {
-      console.error('[AUTH-API] Login request failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[AUTH-API] Login request failed:', error);
+      }
       throw error;
     }
   },

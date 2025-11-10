@@ -129,7 +129,7 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
                 cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '5 5' }}
                 content={<ChartTooltipContent
                   formatter={(value, name) => [
-                    <div key={`tooltip-${name}`} className="flex flex-col gap-1">
+                    <div key={`tooltip-${name}-${value}`} className="flex flex-col gap-1">
                       <span className="font-bold text-base">₦{Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       <span className="text-xs text-muted-foreground">
                         {((Number(value) / totalSales) * 100).toFixed(1)}% of total
@@ -163,7 +163,7 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
                 animationBegin={0}
                 animationDuration={1200}
                 animationEasing="ease-in-out"
-                name="salesArea"
+                name="sales"
                 id="sales-area"
               />
               {/* Overlay line with dots for emphasis */}
@@ -190,9 +190,9 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
                   )
                 }}
                 activeDot={{ r: 9, strokeWidth: 3 }}
-                name="salesLine"
+                name="sales"
                 id="sales-line"
-                hide={false}
+                hide={true}
               />
             </ComposedChart>
           </ResponsiveContainer>

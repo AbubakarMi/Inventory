@@ -29,6 +29,17 @@ export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => vo
 
     const handleDelete = async (user: User) => {
         if (!user.id) return;
+
+        // Prevent deleting admin users
+        if (user.role === 'Admin') {
+            toast({
+                variant: "destructive",
+                title: "Cannot Delete Admin",
+                description: "Admin users cannot be deleted for security reasons.",
+            });
+            return;
+        }
+
         try {
             await deleteUser(user.id);
             toast({
@@ -52,6 +63,17 @@ export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => vo
 
     const handleSuspend = async (user: User) => {
         if (!user.id) return;
+
+        // Prevent suspending admin users
+        if (user.role === 'Admin') {
+            toast({
+                variant: "destructive",
+                title: "Cannot Suspend Admin",
+                description: "Admin users cannot be suspended for security reasons.",
+            });
+            return;
+        }
+
         const newStatus = user.status === 'Suspended' ? 'Active' : 'Suspended';
         try {
             await updateUser(user.id, { status: newStatus });
@@ -125,25 +147,34 @@ export const getColumns = (toast: (options: Toast) => void, onRefresh?: () => vo
                         Edit
                     </button>
                 </UserModal>
-                <ActionConfirmationDialog
-                  title="Are you sure?"
-                  description={`This will ${user.status === 'Suspended' ? 'reactivate' : 'suspend'} ${user.name}'s account.`}
-                  onConfirm={() => handleSuspend(user)}
-                >
-                  <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-orange-600 focus:text-orange-600 focus:bg-orange-100 dark:focus:bg-orange-900/50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                    {user.status === 'Suspended' ? 'Reactivate' : 'Suspend'}
-                  </button>
-                </ActionConfirmationDialog>
-                <ActionConfirmationDialog
-                  title="Are you absolutely sure?"
-                  description={`This action cannot be undone. This will permanently delete ${user.name}'s account and remove their data from our servers.`}
-                  onConfirm={() => handleDelete(user)}
-                  variant="destructive"
-                >
-                  <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                      Delete
-                  </button>
-                </ActionConfirmationDialog>
+                {user.role !== 'Admin' && (
+                  <>
+                    <ActionConfirmationDialog
+                      title="Are you sure?"
+                      description={`This will ${user.status === 'Suspended' ? 'reactivate' : 'suspend'} ${user.name}'s account.`}
+                      onConfirm={() => handleSuspend(user)}
+                    >
+                      <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-orange-600 focus:text-orange-600 focus:bg-orange-100 dark:focus:bg-orange-900/50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                        {user.status === 'Suspended' ? 'Reactivate' : 'Suspend'}
+                      </button>
+                    </ActionConfirmationDialog>
+                    <ActionConfirmationDialog
+                      title="Are you absolutely sure?"
+                      description={`This action cannot be undone. This will permanently delete ${user.name}'s account and remove their data from our servers.`}
+                      onConfirm={() => handleDelete(user)}
+                      variant="destructive"
+                    >
+                      <button className="w-full text-left relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors text-destructive focus:text-destructive focus:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                          Delete
+                      </button>
+                    </ActionConfirmationDialog>
+                  </>
+                )}
+                {user.role === 'Admin' && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground italic">
+                    Admin users cannot be suspended or deleted
+                  </div>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )

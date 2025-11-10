@@ -38,7 +38,7 @@ export function StockLevelsChart({ items }: StockLevelsChartProps) {
     return Object.entries(stockByCategory).map(([category, quantity]) => ({
       category,
       quantity
-    })).sort((a, b) => b.quantity - a.quantity).slice(0, 10)
+    })).sort((a, b) => b.quantity - a.quantity).slice(0, 6)
   }, [items])
 
   const maxQuantity = React.useMemo(() => {
@@ -52,17 +52,17 @@ export function StockLevelsChart({ items }: StockLevelsChartProps) {
   return (
     <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
       <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
             <CardTitle className="text-xl md:text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-50 dark:to-slate-200 bg-clip-text text-transparent">
               Stock Levels by Category
             </CardTitle>
             <CardDescription className="text-sm md:text-base text-slate-600 dark:text-slate-400 font-medium mt-1">
-              Current inventory distribution across top categories
+              Current inventory distribution
             </CardDescription>
           </div>
-          <div className="text-right hidden md:block">
-            <div className="text-3xl font-extrabold text-primary">
+          <div className="text-right">
+            <div className="text-2xl md:text-3xl font-extrabold text-primary">
               {totalQuantity.toLocaleString()}
             </div>
             <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">
@@ -72,14 +72,14 @@ export function StockLevelsChart({ items }: StockLevelsChartProps) {
         </div>
       </CardHeader>
       <CardContent className="pt-6 pb-8">
-        <ChartContainer config={chartConfig} className="h-[420px] w-full">
+        <ChartContainer config={chartConfig} className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
               layout="vertical"
-              barSize={32}
-              margin={{ top: 5, right: 80, left: 5, bottom: 5 }}
-              barGap={8}
+              barSize={36}
+              margin={{ top: 5, right: 70, left: 5, bottom: 5 }}
+              barGap={10}
             >
               <defs>
                 {COLORS.map((color, index) => (

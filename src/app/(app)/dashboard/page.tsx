@@ -31,11 +31,33 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch data with individual error handling to prevent one failure from blocking all data
         const [inventoryRes, salesRes, usersRes, suppliersRes] = await Promise.all([
-          api.get('/inventory'),
-          api.get('/sales'),
-          api.get('/users').catch(() => ({ users: [] })), // May fail for non-admin users
-          api.get('/suppliers'),
+          api.get('/inventory').catch((error) => {
+            // Silently handle expected errors (401 Unauthorized)
+            if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+              console.error('Error fetching inventory:', error);
+            }
+            return { items: [] };
+          }),
+          api.get('/sales').catch((error) => {
+            if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+              console.error('Error fetching sales:', error);
+            }
+            return { sales: [] };
+          }),
+          api.get('/users').catch((error) => {
+            if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+              console.error('Error fetching users:', error);
+            }
+            return { users: [] };
+          }),
+          api.get('/suppliers').catch((error) => {
+            if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+              console.error('Error fetching suppliers:', error);
+            }
+            return { suppliers: [] };
+          }),
         ]);
 
         setInventoryItems(inventoryRes.items || []);
@@ -51,7 +73,6 @@ export default function DashboardPage() {
 
     fetchData();
   }, []);
-
 
   const [isLowStockAlertVisible, setIsLowStockAlertVisible] = useState(true);
 
@@ -233,20 +254,25 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Main Content Area - Responsive chart layout */}
-      <div className="grid gap-5 md:gap-6 lg:gap-7 xl:grid-cols-12">
-        {/* Left Column - Charts */}
-        <div className="xl:col-span-8 space-y-5 md:space-y-6">
+      {/* Main Content Area - Improved responsive chart layout */}
+      <div className="grid gap-5 md:gap-6 lg:gap-7 xl:grid-cols-3">
+        {/* Left Column - Primary Charts */}
+        <div className="xl:col-span-2 space-y-5 md:space-y-6">
+          {/* Category Breakdown - Full width at top */}
           <CategoryBreakdownChart data={categoryBreakdown} />
-          <div className="grid gap-5 md:gap-6 md:grid-cols-2">
-            { (isAdmin || isManager) && <SalesTrendChart sales={sales} /> }
+
+          {/* Stock Levels and Sales Trend - Priority charts */}
+          <div className="grid gap-5 md:gap-6 lg:grid-cols-2">
             <StockLevelsChart items={inventoryItems} />
+            { (isAdmin || isManager) && <SalesTrendChart sales={sales} /> }
           </div>
+
+          {/* Top Products Table - Full width at bottom */}
           { (isAdmin || isManager) && <TopProductsTable items={topSellingItems} /> }
         </div>
 
         {/* Right Column - Summary & Actions */}
-        <div className="xl:col-span-4 space-y-5 md:space-y-6">
+        <div className="xl:col-span-1 space-y-5 md:space-y-6">
           <RecentSales sales={(sales || []).slice(0, 5)} />
 
           <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">

@@ -31,14 +31,28 @@ export default function ReportsPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Fetch data with individual error handling to prevent one failure from blocking all data
                 const [salesRes, inventoryRes] = await Promise.all([
-                    api.get('/sales'),
-                    api.get('/inventory'),
+                    api.get('/sales').catch((error) => {
+                        // Silently handle expected errors (401 Unauthorized)
+                        if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+                            console.error('Error fetching sales:', error);
+                        }
+                        return { sales: [] };
+                    }),
+                    api.get('/inventory').catch((error) => {
+                        if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+                            console.error('Error fetching inventory:', error);
+                        }
+                        return { items: [] };
+                    }),
                 ]);
                 setSales(salesRes.sales || []);
                 setInventoryItems(inventoryRes.items || []);
             } catch (error) {
-                console.error('Error fetching reports data:', error);
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('Error fetching reports data:', error);
+                }
             } finally {
                 setLoading(false);
             }

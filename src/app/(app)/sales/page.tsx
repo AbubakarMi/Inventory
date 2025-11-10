@@ -32,11 +32,37 @@ export default function SalesPage() {
         try {
             setLoading(true);
             const [salesRes, usageRes, items, cats, sups] = await Promise.all([
-                api.get('/sales?type=Sale'),
-                api.get('/sales?type=Usage'),
-                getInventoryItems(),
-                getCategories(),
-                getSuppliers()
+                api.get('/sales?type=Sale').catch((error) => {
+                    // Silently handle expected errors (401 Unauthorized)
+                    if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+                        console.error('Error fetching sales:', error);
+                    }
+                    return { sales: [] };
+                }),
+                api.get('/sales?type=Usage').catch((error) => {
+                    if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+                        console.error('Error fetching usage:', error);
+                    }
+                    return { sales: [] };
+                }),
+                getInventoryItems().catch((error) => {
+                    if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+                        console.error('Error fetching inventory:', error);
+                    }
+                    return [];
+                }),
+                getCategories().catch((error) => {
+                    if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+                        console.error('Error fetching categories:', error);
+                    }
+                    return [];
+                }),
+                getSuppliers().catch((error) => {
+                    if (error?.status !== 401 && process.env.NODE_ENV === 'development') {
+                        console.error('Error fetching suppliers:', error);
+                    }
+                    return [];
+                })
             ]);
 
             setSalesData(salesRes.sales || []);
@@ -45,7 +71,9 @@ export default function SalesPage() {
             setCategories(cats);
             setSuppliers(sups);
         } catch (error) {
-            console.error('Error fetching sales data:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching sales data:', error);
+            }
         } finally {
             setLoading(false);
         }
