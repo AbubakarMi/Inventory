@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { createAdminNotification } from '@/lib/notifications';
 
 // GET - Fetch all inventory items
 export async function GET(request: NextRequest) {
@@ -121,6 +122,15 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       ['create', 'inventory', result.rows[0].id, user.id, user.name, user.role, `Created inventory item: ${name}`]
     );
+
+    // Create notification for admins/managers
+    await createAdminNotification({
+      title: 'New Item Added',
+      message: `${user.name} added "${name}" to inventory (${qty} ${unit})`,
+      type: 'success',
+      relatedCollection: 'inventory',
+      relatedDocumentId: result.rows[0].id,
+    });
 
     return NextResponse.json({ item: result.rows[0], message: 'Item created successfully' }, { status: 201 });
   } catch (error: any) {

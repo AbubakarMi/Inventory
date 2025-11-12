@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { createAdminNotification } from '@/lib/notifications';
 
 // GET - Fetch all sales
 export async function GET(request: NextRequest) {
@@ -76,6 +77,15 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       ['create', 'sales', result.rows[0].id, user.id, user.name, user.role, `Recorded ${type}: ${item_name}`]
     );
+
+    // Create notification for admins/managers
+    await createAdminNotification({
+      title: `New ${type} Recorded`,
+      message: `${user.name} recorded ${type.toLowerCase()} of ${item_name} (${quantity} units, ₦${total})`,
+      type: 'info',
+      relatedCollection: 'sales',
+      relatedDocumentId: result.rows[0].id,
+    });
 
     return NextResponse.json({ sale: result.rows[0], message: 'Sale recorded successfully' }, { status: 201 });
   } catch (error: any) {

@@ -41,7 +41,8 @@
       "Bash(psql:*)",
       "Bash(node add-grade-column.js:*)",
       "Bash(del add-grade-column.js)",
-      "Bash(del add-grade-column.sql)"
+      "Bash(del add-grade-column.sql)",
+      "Bash(node fix-notifications-table.js:*)"
     ],
     "deny": [],
     "ask": []

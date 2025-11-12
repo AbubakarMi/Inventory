@@ -385,23 +385,23 @@ export default function DashboardPage() {
       </Dialog>
 
       {/* Professional Footer */}
-      <footer className="mt-12 pt-8 border-t border-slate-200/60 dark:border-slate-800/60">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white shadow-md">
+      <footer className="mt-8 pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-2">
+          <div className="flex items-center gap-2">
+            <div className="relative w-6 h-6 rounded-full overflow-hidden bg-white shadow-sm">
               <Image
                 src="/albarka-logo.jpg"
                 alt="Albarka PS Intertrade"
                 fill
-                className="object-contain p-1"
+                className="object-contain p-0.5"
               />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Albarka PS Intertrade</p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Inventory Management System</p>
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Albarka PS Intertrade</p>
+              <p className="text-[10px] text-slate-600 dark:text-slate-400">Inventory System</p>
             </div>
           </div>
-          <div className="flex items-center gap-6 text-xs text-slate-600 dark:text-slate-400">
+          <div className="flex items-center text-[10px] text-slate-600 dark:text-slate-400">
             <span>&copy; {new Date().getFullYear()} All rights reserved</span>
           </div>
         </div>

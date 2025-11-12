@@ -162,17 +162,28 @@ export default function InventoryPage() {
           </Select>
         </div>
       </div>
-      <DataTable 
-        columns={columns} 
-        data={filteredItems} 
+      <DataTable
+        columns={columns}
+        data={filteredItems}
         emptyState={
             <div className="flex flex-col items-center gap-4 text-center py-12">
                 <PackageSearch className="h-16 w-16 text-muted-foreground" />
-                <h3 className="text-xl font-bold tracking-tight">No inventory items found</h3>
-                <p className="text-sm text-muted-foreground">Get started by adding your first item.</p>
-                <ItemModal categories={categories || []} onSuccess={handleRefresh}>
-                    <Button>Add Item</Button>
-                </ItemModal>
+                <h3 className="text-xl font-bold tracking-tight">
+                  {selectedStatus === 'All' && 'No inventory items found'}
+                  {selectedStatus === 'In Stock' && 'No in stock items found'}
+                  {selectedStatus === 'Low Stock' && 'No low stock items found'}
+                  {selectedStatus === 'Out of Stock' && 'No out of stock items found'}
+                  {selectedStatus === 'Expiring Soon' && 'No expiring soon items found'}
+                  {selectedStatus === 'Expired' && 'No expired items found'}
+                </h3>
+                {selectedStatus === 'All' && (
+                  <>
+                    <p className="text-sm text-muted-foreground">Get started by adding your first item.</p>
+                    <ItemModal categories={categories || []} onSuccess={handleRefresh}>
+                        <Button>Add Item</Button>
+                    </ItemModal>
+                  </>
+                )}
             </div>
         }
       />
