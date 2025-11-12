@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/badge"
 import type { InventoryItem, Category, Toast } from "@/lib/types"
 import { ItemModal } from "./item-modal"
 import { Button } from "../ui/button"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, AlertTriangle, AlertCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { ActionConfirmationDialog } from "../action-confirmation-dialog"
 import { deleteInventoryItem } from "@/lib/services/inventory"
+import { differenceInDays, isBefore } from "date-fns"
 
 type ColumnsProps = {
     categories: Category[];
@@ -67,6 +68,54 @@ export const getColumns = ({ categories, toast, onRefresh }: ColumnsProps) => {
               ? "warning"
               : "destructive"
           return <Badge variant={variant}>{row.original.status}</Badge>
+        },
+      },
+      {
+        accessorKey: "expiry",
+        header: "Expiry Date",
+        cell: ({ row }: { row: { original: InventoryItem } }) => {
+          const item = row.original;
+
+          if (!item.expiry) {
+            return <div className="text-muted-foreground text-sm">N/A</div>;
+          }
+
+          const expiryDate = new Date(item.expiry);
+          const today = new Date();
+
+          // Reset time to start of day for accurate comparison
+          expiryDate.setHours(0, 0, 0, 0);
+          today.setHours(0, 0, 0, 0);
+
+          const daysUntilExpiry = differenceInDays(expiryDate, today);
+          const isExpired = daysUntilExpiry < 0;
+          const isExpiringSoon = daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
+
+          return (
+            <div className="flex items-center gap-2">
+              {isExpired ? (
+                <>
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                  <span className="text-red-600 dark:text-red-500 font-semibold text-sm">
+                    {expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                  <Badge variant="destructive" className="text-xs">Expired</Badge>
+                </>
+              ) : isExpiringSoon ? (
+                <>
+                  <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-500" />
+                  <span className="text-orange-600 dark:text-orange-500 font-semibold text-sm">
+                    {expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                  <Badge variant="warning" className="text-xs">Soon</Badge>
+                </>
+              ) : (
+                <span className="text-sm font-medium">
+                  {expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              )}
+            </div>
+          );
         },
       },
       {

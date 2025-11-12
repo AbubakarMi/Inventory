@@ -280,11 +280,8 @@ export default function DashboardPage() {
           {/* Category Breakdown - Full width at top */}
           <CategoryBreakdownChart data={categoryBreakdown} />
 
-          {/* Stock Levels and Sales Trend - Priority charts */}
-          <div className="grid gap-5 md:gap-6 lg:grid-cols-2">
-            <StockLevelsChart items={inventoryItems} />
-            { (isAdmin || isManager) && <SalesTrendChart sales={sales} /> }
-          </div>
+          {/* Sales Trend - Full width chart */}
+          { (isAdmin || isManager) && <SalesTrendChart sales={sales} /> }
 
           {/* Top Products Table - Full width at bottom */}
           { (isAdmin || isManager) && <TopProductsTable items={topSellingItems} /> }
@@ -292,6 +289,9 @@ export default function DashboardPage() {
 
         {/* Right Column - Summary & Actions */}
         <div className="xl:col-span-1 space-y-5 md:space-y-6">
+          {/* Stock Status Card */}
+          <StockLevelsChart items={inventoryItems} />
+
           <RecentSales sales={(sales || []).slice(0, 5)} />
 
           <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
@@ -341,47 +341,6 @@ export default function DashboardPage() {
               </Link>
             </CardContent>
           </Card>
-
-          {/* Stock Status Summary */}
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl">
-            <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
-              <CardTitle className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-50">Stock Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-50/50 dark:hover:from-green-950/30 dark:hover:to-green-950/10 transition-all duration-200 border border-transparent hover:border-green-200 dark:hover:border-green-900">
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">In Stock</span>
-                  <span className="font-bold text-green-600 dark:text-green-500 px-3 py-1 bg-green-100 dark:bg-green-950 rounded-lg">{inventoryItems.filter(i => i.status === 'In Stock').length} items</span>
-                </div>
-                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-yellow-50 hover:to-yellow-50/50 dark:hover:from-yellow-950/30 dark:hover:to-yellow-950/10 transition-all duration-200 border border-transparent hover:border-yellow-200 dark:hover:border-yellow-900">
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">Low Stock</span>
-                  <span className="font-bold text-yellow-600 dark:text-yellow-500 px-3 py-1 bg-yellow-100 dark:bg-yellow-950 rounded-lg">{lowStockItems} items</span>
-                </div>
-                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-50/50 dark:hover:from-red-950/30 dark:hover:to-red-950/10 transition-all duration-200 border border-transparent hover:border-red-200 dark:hover:border-red-900">
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">Out of Stock</span>
-                  <span className="font-bold text-red-600 dark:text-red-500 px-3 py-1 bg-red-100 dark:bg-red-950 rounded-lg">{outOfStockItems} items</span>
-                </div>
-                <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-50/50 dark:hover:from-orange-950/30 dark:hover:to-orange-950/10 transition-all duration-200 border border-transparent hover:border-orange-200 dark:hover:border-orange-900">
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">Expiring Soon</span>
-                  <span className="font-bold text-orange-600 dark:text-orange-500 px-3 py-1 bg-orange-100 dark:bg-orange-950 rounded-lg">{expiringSoon} items</span>
-                </div>
-              </div>
-              { (isAdmin || isManager) && (
-                <div className="pt-4 border-t-2 border-slate-200/60 dark:border-slate-800/60 space-y-2">
-                  <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-50/50 dark:hover:from-blue-950/30 dark:hover:to-blue-950/10 transition-all duration-200 border border-transparent hover:border-blue-200 dark:hover:border-blue-900">
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">Total Suppliers</span>
-                    <span className="font-bold text-blue-600 dark:text-blue-500 px-3 py-1 bg-blue-100 dark:bg-blue-950 rounded-lg">{totalSuppliers}</span>
-                  </div>
-                  { isAdmin && (
-                    <div className="flex items-center justify-between text-sm p-3 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-50/50 dark:hover:from-purple-950/30 dark:hover:to-purple-950/10 transition-all duration-200 border border-transparent hover:border-purple-200 dark:hover:border-purple-900">
-                      <span className="text-slate-700 dark:text-slate-300 font-medium">Total Users</span>
-                      <span className="font-bold text-purple-600 dark:text-purple-500 px-3 py-1 bg-purple-100 dark:bg-purple-950 rounded-lg">{totalUsers}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
 
@@ -409,8 +368,8 @@ export default function DashboardPage() {
 
             {/* Text Content */}
             <div className="space-y-1">
-              <h2 className="text-xl font-bold">Welcome back!</h2>
-              <p className="text-lg font-semibold text-primary">{welcomeData?.name}</p>
+              <DialogTitle className="text-xl font-bold">Welcome back!</DialogTitle>
+              <DialogDescription className="text-lg font-semibold text-primary">{welcomeData?.name}</DialogDescription>
               <p className="text-xs text-muted-foreground">{welcomeData?.role}</p>
             </div>
 
@@ -424,8 +383,30 @@ export default function DashboardPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Professional Footer */}
+      <footer className="mt-12 pt-8 border-t border-slate-200/60 dark:border-slate-800/60">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white shadow-md">
+              <Image
+                src="/albarka-logo.jpg"
+                alt="Albarka PS Intertrade"
+                fill
+                className="object-contain p-1"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Albarka PS Intertrade</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Inventory Management System</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 text-xs text-slate-600 dark:text-slate-400">
+            <span>&copy; {new Date().getFullYear()} All rights reserved</span>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
 
-    

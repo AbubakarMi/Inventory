@@ -34,7 +34,14 @@
       "Bash(mkdir:*)",
       "Bash(where:*)",
       "Bash(node generate-favicon.js:*)",
-      "Bash(del generate-favicon.js)"
+      "Bash(del generate-favicon.js)",
+      "Bash(cmd //c taskkill //PID 31100 //F)",
+      "Bash(cmd //c taskkill //PID 42120 //F)",
+      "Bash(set:*)",
+      "Bash(psql:*)",
+      "Bash(node add-grade-column.js:*)",
+      "Bash(del add-grade-column.js)",
+      "Bash(del add-grade-column.sql)"
     ],
     "deny": [],
     "ask": []
