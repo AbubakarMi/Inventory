@@ -137,29 +137,47 @@ export default function ReportsPage() {
         const primaryGreen = [45, 122, 62];
         const darkGray = [50, 50, 50];
         const lightGray = [100, 100, 100];
+        const bgGray = [245, 245, 245];
 
         let yPos = 20;
 
         // Add logo
         const logoImg = new Image();
         logoImg.src = '/albarka-logo.jpg';
-        doc.addImage(logoImg, 'JPEG', 14, yPos - 5, 20, 20);
 
-        // Header - Company Name
-        doc.setFontSize(18);
+        // Center logo at top
+        const logoSize = 25;
+        const logoX = (pageWidth - logoSize) / 2;
+        doc.addImage(logoImg, 'JPEG', logoX, yPos, logoSize, logoSize);
+
+        // Add large transparent watermark in the center
+        const watermarkWidth = 140;
+        const watermarkHeight = 140;
+        const watermarkX = (pageWidth - watermarkWidth) / 2;
+        const watermarkY = (pageHeight - watermarkHeight) / 2;
+        doc.saveGraphicsState();
+        doc.setGState(new doc.GState({ opacity: 0.05 }));
+        doc.addImage(logoImg, 'JPEG', watermarkX, watermarkY, watermarkWidth, watermarkHeight, undefined, 'NONE');
+        doc.restoreGraphicsState();
+
+        yPos += logoSize + 5;
+
+        // Header - Company Name (centered)
+        doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(primaryGreen[0], primaryGreen[1], primaryGreen[2]);
-        doc.text('ALBARKA PS INTERTRADE', 40, yPos + 5);
+        doc.text('ALBARKA PS INTERTRADE', pageWidth / 2, yPos, { align: 'center' });
 
-        doc.setFontSize(10);
+        yPos += 6;
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text('Inventory Management System', 40, yPos + 11);
+        doc.text('Inventory Management System', pageWidth / 2, yPos, { align: 'center' });
 
-        yPos += 15;
+        yPos += 8;
 
         // Report Title and Date
-        yPos += 10;
-        doc.setFontSize(12);
+        yPos += 5;
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
         doc.text('Inventory Report', 14, yPos);
@@ -176,68 +194,68 @@ export default function ReportsPage() {
         doc.line(14, yPos, pageWidth - 14, yPos);
 
         // Financial Summary
-        yPos += 10;
-        doc.setFontSize(12);
+        yPos += 8;
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
         doc.text('Financial Summary', 14, yPos);
 
-        yPos += 8;
-        doc.setFontSize(10);
+        yPos += 6;
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
 
         doc.text('Total Revenue:', 14, yPos);
-        doc.text(`₦${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+        doc.text(`N${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
 
-        yPos += 7;
+        yPos += 5;
         doc.text('Cost of Goods Sold:', 14, yPos);
-        doc.text(`₦${costOfGoodsSold.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+        doc.text(`N${costOfGoodsSold.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
 
-        yPos += 7;
+        yPos += 5;
         doc.setFont('helvetica', 'bold');
         const profitColor = netProfit >= 0 ? [45, 122, 62] : [220, 38, 38];
         doc.setTextColor(profitColor[0], profitColor[1], profitColor[2]);
         doc.text('Net Profit:', 14, yPos);
-        doc.text(`₦${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+        doc.text(`N${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
 
         // Inventory Overview
-        yPos += 15;
-        doc.setFontSize(12);
+        yPos += 8;
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
         doc.text('Inventory Overview', 14, yPos);
 
-        yPos += 8;
-        doc.setFontSize(10);
+        yPos += 6;
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
 
         doc.text('Total Stock Value:', 14, yPos);
-        doc.text(`₦${totalStockValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+        doc.text(`N${totalStockValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
 
-        yPos += 7;
+        yPos += 5;
         doc.text('Total Items:', 14, yPos);
         doc.text(`${totalItems.toLocaleString('en-US')} (${inventoryItems.length} unique)`, 80, yPos);
 
-        yPos += 7;
+        yPos += 5;
         doc.text('Low Stock Items:', 14, yPos);
         doc.text(`${lowStockCount}`, 80, yPos);
 
-        yPos += 7;
+        yPos += 5;
         doc.text('Out of Stock Items:', 14, yPos);
         doc.text(`${outOfStockCount}`, 80, yPos);
 
-        yPos += 7;
+        yPos += 5;
         doc.text('Average Item Value:', 14, yPos);
-        doc.text(`₦${averageItemValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+        doc.text(`N${averageItemValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
 
-        yPos += 7;
+        yPos += 5;
         doc.text('Profit Margin:', 14, yPos);
         doc.text(`${totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : '0.00'}%`, 80, yPos);
 
         // Inventory Table
-        yPos += 12;
-        doc.setFontSize(12);
+        yPos += 8;
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
         doc.text('Inventory Items', 14, yPos);
@@ -249,7 +267,7 @@ export default function ReportsPage() {
             item.category || 'N/A',
             `${item.quantity} ${item.unit}`,
             item.status || 'N/A',
-            `₦${(item.quantity * item.cost).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+            `N${(item.quantity * item.cost).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]);
 
         autoTable(doc, {
@@ -258,45 +276,37 @@ export default function ReportsPage() {
             body: inventoryData,
             theme: 'plain',
             styles: {
-                lineWidth: 0,
-                lineColor: [255, 255, 255],
-                cellPadding: { top: 4, right: 5, bottom: 4, left: 5 },
-                minCellHeight: 7
+                lineWidth: 0.3,
+                lineColor: [200, 200, 200],
+                cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+                minCellHeight: 7,
+                fontSize: 8,
+                textColor: darkGray
             },
             headStyles: {
-                fillColor: primaryGreen,
-                textColor: [255, 255, 255],
+                textColor: darkGray,
                 fontSize: 9,
                 fontStyle: 'bold',
                 halign: 'left',
-                lineWidth: 0,
-                cellPadding: { top: 4, right: 5, bottom: 4, left: 5 }
+                lineWidth: 0.3,
+                lineColor: [200, 200, 200],
+                cellPadding: { top: 4, right: 6, bottom: 4, left: 6 }
             },
             bodyStyles: {
                 fontSize: 8,
                 textColor: darkGray,
-                lineWidth: 0,
-                cellPadding: { top: 4, right: 5, bottom: 4, left: 5 }
-            },
-            alternateRowStyles: {
-                fillColor: [248, 248, 248],
-                lineWidth: 0
+                lineWidth: 0.3,
+                lineColor: [200, 200, 200],
+                cellPadding: { top: 4, right: 6, bottom: 4, left: 6 }
             },
             columnStyles: {
-                0: { cellWidth: 65, lineWidth: 0 },
-                1: { cellWidth: 35, lineWidth: 0 },
-                2: { cellWidth: 25, halign: 'center', lineWidth: 0 },
-                3: { cellWidth: 28, halign: 'center', lineWidth: 0 },
-                4: { cellWidth: 40, halign: 'right', lineWidth: 0 }
+                0: { cellWidth: 55 },
+                1: { cellWidth: 30 },
+                2: { cellWidth: 25, halign: 'center' },
+                3: { cellWidth: 25, halign: 'center' },
+                4: { cellWidth: 50, halign: 'right' }
             },
             margin: { left: 14, right: 14 },
-            tableLineWidth: 0,
-            tableLineColor: [255, 255, 255],
-            didDrawCell: function(data) {
-                // Force all cell borders to be invisible
-                data.cell.styles.lineWidth = 0;
-                data.cell.styles.lineColor = [255, 255, 255];
-            },
             didDrawPage: function(data) {
                 // Footer
                 const footerY = pageHeight - 10;
@@ -462,35 +472,52 @@ export default function ReportsPage() {
                         <CardTitle>Inventory Overview</CardTitle>
                         <CardDescription>Comprehensive inventory statistics and metrics.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-4 md:grid-cols-4">
-                        <div className="p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                            <h3 className="text-sm font-medium text-blue-700 dark:text-blue-400">Total Stock Value</h3>
-                            <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">₦{totalStockValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <CardContent className="grid gap-4">
+                        {/* Row 1: Total Stock Value + Average Item Value */}
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-blue-700 dark:text-blue-400">Total Stock Value</h3>
+                                <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">₦{totalStockValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            </div>
+                            <div className="p-4 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-purple-700 dark:text-purple-400">Average Item Value</h3>
+                                <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">₦{averageItemValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            </div>
                         </div>
-                        <div className="p-4 bg-muted rounded-lg">
-                            <h3 className="text-sm font-medium text-muted-foreground">Total Items</h3>
-                            <p className="text-2xl font-bold">{totalItems.toLocaleString('en-US')}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{inventoryItems.length} unique items</p>
-                        </div>
-                        <div className="p-4 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
-                            <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Low Stock</h3>
-                            <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{lowStockCount}</p>
-                            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">items need reorder</p>
-                        </div>
-                        <div className="p-4 bg-red-100 dark:bg-red-900/50 rounded-lg">
-                            <h3 className="text-sm font-medium text-red-700 dark:text-red-400">Out of Stock</h3>
-                            <p className="text-2xl font-bold text-red-700 dark:text-red-400">{outOfStockCount}</p>
-                            <p className="text-xs text-red-700 dark:text-red-400 mt-1">items unavailable</p>
-                        </div>
-                        <div className="p-4 bg-purple-100 dark:bg-purple-900/50 rounded-lg md:col-span-2">
-                            <h3 className="text-sm font-medium text-purple-700 dark:text-purple-400">Average Item Value</h3>
-                            <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">₦{averageItemValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        </div>
-                        <div className="p-4 bg-green-100 dark:bg-green-900/50 rounded-lg md:col-span-2">
-                            <h3 className="text-sm font-medium text-green-700 dark:text-green-400">Profit Margin</h3>
-                            <p className="text-2xl font-bold text-green-700 dark:text-green-400">
-                                {totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : '0.00'}%
-                            </p>
+
+                        {/* Rows 2-3: Remaining cards in 3-column grid */}
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <div className="p-4 bg-muted rounded-lg">
+                                <h3 className="text-sm font-medium text-muted-foreground">Total Items</h3>
+                                <p className="text-2xl font-bold">{totalItems.toLocaleString('en-US')}</p>
+                                <p className="text-xs text-muted-foreground mt-1">{inventoryItems.length} unique items</p>
+                            </div>
+                            <div className="p-4 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Low Stock</h3>
+                                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{lowStockCount}</p>
+                                <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">items need reorder</p>
+                            </div>
+                            <div className="p-4 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-red-700 dark:text-red-400">Out of Stock</h3>
+                                <p className="text-2xl font-bold text-red-700 dark:text-red-400">{outOfStockCount}</p>
+                                <p className="text-xs text-red-700 dark:text-red-400 mt-1">items unavailable</p>
+                            </div>
+                            <div className="p-4 bg-orange-100 dark:bg-orange-900/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-orange-700 dark:text-orange-400">Expiring Soon</h3>
+                                <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{inventoryItems.filter(item => item.expiry && new Date(item.expiry) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length}</p>
+                                <p className="text-xs text-orange-700 dark:text-orange-400 mt-1">within 7 days</p>
+                            </div>
+                            <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-400">Expired Items</h3>
+                                <p className="text-2xl font-bold text-slate-700 dark:text-slate-400">{inventoryItems.filter(item => item.expiry && new Date(item.expiry) < new Date()).length}</p>
+                                <p className="text-xs text-slate-700 dark:text-slate-400 mt-1">past expiry date</p>
+                            </div>
+                            <div className="p-4 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-green-700 dark:text-green-400">Profit Margin</h3>
+                                <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+                                    {totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : '0.00'}%
+                                </p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -503,9 +530,9 @@ export default function ReportsPage() {
                     <CardContent>
                          <ChartContainer config={chartConfig} className="h-[300px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart 
+                                <AreaChart
                                 data={salesChartData}
-                                margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
                                 >
                                     <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -515,7 +542,7 @@ export default function ReportsPage() {
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value}`} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value}`} width={60} />
                                     <ChartTooltip cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 2, strokeDasharray: "3 3" }} content={<ChartTooltipContent />} />
                                     <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
                                 </AreaChart>
