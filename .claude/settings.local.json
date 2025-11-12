@@ -24,7 +24,12 @@
       "Bash(ping:*)",
       "Bash(tasklist:*)",
       "Bash(rd /s /q .next 2)",
-      "Bash(rd /s /q node_modules.cache 2)"
+      "Bash(rd /s /q node_modules.cache 2)",
+      "Bash(git show:*)",
+      "Bash(git for-each-ref:*)",
+      "Bash(git update-ref:*)",
+      "Bash(git reflog:*)",
+      "Bash(git gc:*)"
     ],
     "deny": [],
     "ask": []
