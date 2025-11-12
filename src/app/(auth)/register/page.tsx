@@ -104,10 +104,10 @@ export default function RegisterPage() {
           >
             <div className="flex justify-center items-center gap-3 mb-8">
               <Tractor className="h-16 w-16" />
-              <h1 className="text-5xl font-bold">APS Intertrade</h1>
+              <h1 className="text-5xl font-bold">Albarka PS Intertrade</h1>
             </div>
             <p className="text-xl max-w-md opacity-90">
-              Join businesses managing their inventory efficiently with APS Intertrade
+              Join businesses managing their inventory efficiently with Albarka PS Intertrade
             </p>
             <div className="space-y-4 mt-12 max-w-md text-left">
               <div className="flex items-start gap-3">
@@ -149,12 +149,12 @@ export default function RegisterPage() {
               <div className="flex justify-center lg:hidden mb-4">
                 <div className="flex items-center gap-2">
                   <Tractor className="h-10 w-10 text-primary" />
-                  <span className="text-2xl font-bold">APS Intertrade</span>
+                  <span className="text-2xl font-bold">Albarka PS Intertrade</span>
                 </div>
               </div>
               <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
               <CardDescription className="text-center">
-                Get started with APS Intertrade today
+                Get started with Albarka PS Intertrade today
               </CardDescription>
             </CardHeader>
             <CardContent>

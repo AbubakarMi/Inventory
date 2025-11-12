@@ -114,11 +114,22 @@ export default function ReportsPage() {
 
         let yPos = 20;
 
+        // Add logo
+        const logoImg = new Image();
+        logoImg.src = '/albarka-logo.jpg';
+        doc.addImage(logoImg, 'JPEG', 14, yPos - 5, 20, 20);
+
         // Header - Company Name
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(primaryGreen[0], primaryGreen[1], primaryGreen[2]);
-        doc.text('APS INTERTRADE INVENTORY SYSTEM', 14, yPos);
+        doc.text('ALBARKA PS INTERTRADE', 40, yPos + 5);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Inventory Management System', 40, yPos + 11);
+
+        yPos += 15;
 
         // Report Title and Date
         yPos += 10;

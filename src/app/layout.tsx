@@ -7,8 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext"
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
-  title: 'APS Intertrade Inventory',
-  description: 'APS Intertrade Inventory Management System',
+  title: 'Albarka PS Intertrade Inventory',
+  description: 'Albarka PS Intertrade Inventory Management System',
 };
 
 export default function RootLayout({

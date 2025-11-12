@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -13,7 +13,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Tractor, Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react"
+import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react"
+import Image from "next/image"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -29,11 +30,18 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   const [loginData, setLoginData] = useState<{ name: string; role: string } | null>(null)
+  const shouldBlockRedirect = useRef(false)
 
-  // Redirect if already logged in
+  // Redirect if already logged in (but not during login flow)
   useEffect(() => {
-    if (!loading && currentUser) {
-      console.log('User already logged in, redirecting to dashboard')
+    console.log('[LOGIN] useEffect check:', {
+      loading,
+      hasUser: !!currentUser,
+      shouldBlock: shouldBlockRedirect.current,
+      showModal: showWelcomeModal
+    })
+    if (!loading && currentUser && !shouldBlockRedirect.current) {
+      console.log('[LOGIN] Redirecting to dashboard (already logged in)')
       router.replace("/dashboard")
     }
   }, [currentUser, loading, router])
@@ -47,22 +55,33 @@ export default function LoginPage() {
   })
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
+    console.log('[LOGIN] Form submitted')
     setIsLoading(true)
     try {
-      console.log('[LOGIN] Starting login attempt for:', values.email)
+      // Block automatic redirect during login flow
+      console.log('[LOGIN] Setting shouldBlockRedirect = true')
+      shouldBlockRedirect.current = true
+
+      console.log('[LOGIN] Calling login function...')
       const result = await login(values.email, values.password)
-      console.log('[LOGIN] Login successful, user data received:', result)
+      console.log('[LOGIN] Login successful, result:', result)
 
       // Store login data and show welcome modal
       const userName = result?.user?.name || 'User'
       const userRole = result?.user?.role || ''
 
+      console.log('[LOGIN] Setting login data:', { userName, userRole })
       setLoginData({ name: userName, role: userRole })
       setIsLoading(false)
+
+      // Show modal
+      console.log('[LOGIN] Setting showWelcomeModal = true')
       setShowWelcomeModal(true)
+      console.log('[LOGIN] Welcome modal should now be visible')
     } catch (error: any) {
-      console.error('[LOGIN] Login failed with error:', error)
+      console.error('[LOGIN] Login error:', error)
       setIsLoading(false)
+      shouldBlockRedirect.current = false
 
       // Extract meaningful error message
       let errorMessage = "Invalid credentials. Please try again."
@@ -86,12 +105,13 @@ export default function LoginPage() {
 
   const handleContinueToDashboard = () => {
     setShowWelcomeModal(false)
-    console.log('[LOGIN] Redirecting to dashboard...')
-    window.location.href = "/dashboard"
+    shouldBlockRedirect.current = false
+    router.push("/dashboard")
   }
 
   // Show loading while checking auth
   if (loading) {
+    console.log('[LOGIN] Rendering loading state')
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -102,15 +122,21 @@ export default function LoginPage() {
     )
   }
 
-  // Don't show login form if already logged in
-  if (currentUser) {
+  // Don't show login form if already logged in (but show modal if it's open)
+  if (currentUser && !showWelcomeModal) {
+    console.log('[LOGIN] User logged in and modal closed, returning null')
     return null
   }
 
+  console.log('[LOGIN] Rendering login form/modal', {
+    hasUser: !!currentUser,
+    showModal: showWelcomeModal
+  })
+
   return (
     <div className="flex min-h-screen">
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-accent relative overflow-hidden">
+      {/* Left side - Branding (No Gradient) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/10"></div>
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white">
           <motion.div
@@ -119,9 +145,24 @@ export default function LoginPage() {
             transition={{ duration: 0.6 }}
             className="text-center space-y-6"
           >
-            <div className="flex justify-center items-center gap-3 mb-8">
-              <Tractor className="h-16 w-16" />
-              <h1 className="text-5xl font-bold">APS Intertrade</h1>
+            <div className="flex flex-col justify-center items-center gap-6 mb-8">
+              {/* Logo */}
+              <div className="w-40 h-40 bg-white rounded-2xl p-6 shadow-xl">
+                <div className="relative w-full h-full">
+                  <Image
+                    src="/albarka-logo.jpg"
+                    alt="Albarka PS Intertrade Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+
+              {/* Company Name */}
+              <h1 className="text-5xl font-bold text-white">
+                Albarka PS Intertrade
+              </h1>
             </div>
             <p className="text-xl max-w-md opacity-90">
               Streamline your inventory management with intelligent insights and real-time tracking
@@ -152,20 +193,32 @@ export default function LoginPage() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <Card className="border-2 shadow-xl">
-            <CardHeader className="space-y-1 pb-6">
-              <div className="flex justify-center lg:hidden mb-4">
-                <div className="flex items-center gap-2">
-                  <Tractor className="h-10 w-10 text-primary" />
-                  <span className="text-2xl font-bold">APS Intertrade</span>
+          <div className="border rounded-lg p-8">
+            <div className="space-y-1 pb-6">
+              <div className="flex justify-center lg:hidden mb-6">
+                <div className="flex flex-col items-center gap-3">
+                  {/* Logo */}
+                  <div className="w-24 h-24 bg-white rounded-xl p-4 shadow-lg">
+                    <div className="relative w-full h-full">
+                      <Image
+                        src="/albarka-logo.jpg"
+                        alt="Albarka PS Intertrade Logo"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+                  </div>
+                  {/* Company Name */}
+                  <span className="text-2xl font-bold">Albarka PS Intertrade</span>
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
-              <CardDescription className="text-center">
+              <h2 className="text-2xl font-bold text-center">Welcome Back</h2>
+              <p className="text-center text-sm text-muted-foreground">
                 Sign in to your account to continue
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
@@ -243,77 +296,68 @@ export default function LoginPage() {
                   </Button>
                 </form>
               </Form>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              {/* <div className="text-sm text-center text-muted-foreground">
-                Don't have an account?{" "}
-                <Link href="/register" className="text-primary hover:underline font-medium">
-                  Create account
-                </Link>
-              </div> */}
-            </CardFooter>
-          </Card>
-
-          {/* Demo Credentials */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="mt-6 p-4 bg-muted/50 rounded-lg border"
-          >
-            <p className="text-xs font-semibold text-muted-foreground mb-3">Test Accounts (Password: admin123):</p>
-            <div className="text-xs space-y-2 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="text-blue-600 dark:text-blue-400 font-semibold min-w-[70px]">Admin:</span>
-                <code className="bg-background px-2 py-0.5 rounded text-foreground">admin@farmsight.com</code>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-green-600 dark:text-green-400 font-semibold min-w-[70px]">Manager:</span>
-                <code className="bg-background px-2 py-0.5 rounded text-foreground">manager@farmsight.com</code>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-orange-600 dark:text-orange-400 font-semibold min-w-[70px]">Store:</span>
-                <code className="bg-background px-2 py-0.5 rounded text-foreground">storekeeper@farmsight.com</code>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-purple-600 dark:text-purple-400 font-semibold min-w-[70px]">Staff:</span>
-                <code className="bg-background px-2 py-0.5 rounded text-foreground">staff@farmsight.com</code>
-              </div>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
 
       {/* Welcome Modal */}
       <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
-        <DialogContent className="sm:max-w-md border-2 border-green-200 dark:border-green-800">
-          <DialogHeader className="text-center space-y-4">
-            <div className="mx-auto w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
+        <DialogContent className="sm:max-w-lg border-2 border-green-200 dark:border-green-800">
+          <DialogHeader className="text-center space-y-6 pt-4">
+            {/* Logo with animation */}
+            <div className="flex justify-center">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-green-200/50 dark:bg-green-600/50 rounded-2xl blur-2xl opacity-50"></div>
+                <div className="relative w-32 h-32 bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-2xl border-2 border-green-200 dark:border-green-700">
+                  <div className="relative w-full h-full">
+                    <Image
+                      src="/albarka-logo.jpg"
+                      alt="Albarka PS Intertrade Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
+                {/* Success checkmark overlay */}
+                <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-green-600 dark:bg-green-500 rounded-full flex items-center justify-center shadow-lg border-4 border-white dark:border-slate-900">
+                  <CheckCircle2 className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </div>
-            <DialogTitle className="text-2xl md:text-3xl font-bold text-green-900 dark:text-green-100">
-              Welcome back, {loginData?.name}! 🎉
-            </DialogTitle>
+
+            <div className="space-y-2">
+              <DialogTitle className="text-3xl md:text-4xl font-bold text-green-900 dark:text-green-100">
+                Welcome back, {loginData?.name}!
+              </DialogTitle>
+              <div className="h-1 w-24 mx-auto bg-green-500 rounded-full"></div>
+            </div>
+
             <DialogDescription className="text-base text-slate-600 dark:text-slate-400">
               You have successfully logged in as <span className="font-bold text-green-700 dark:text-green-400">{loginData?.role}</span>
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-4">
-            <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800">
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                {loginData?.role === 'Admin' && '✓ You have full access to all system features'}
-                {loginData?.role === 'Manager' && '✓ You can manage inventory, sales, and reports'}
-                {loginData?.role === 'Storekeeper' && '✓ You can manage inventory and record sales'}
-                {loginData?.role === 'Staff' && '✓ You can view inventory and record sales'}
-              </p>
+            <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-5 border border-green-200 dark:border-green-800 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-600 dark:bg-green-500 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-sm text-slate-700 dark:text-slate-300 pt-1">
+                  {loginData?.role === 'Admin' && 'You have full access to all system features including user management, reports, and system configuration.'}
+                  {loginData?.role === 'Manager' && 'You can manage inventory, sales, reports, and oversee daily operations.'}
+                  {loginData?.role === 'Storekeeper' && 'You can manage inventory items, record sales and usage transactions.'}
+                  {loginData?.role === 'Staff' && 'You can view inventory and record sales transactions.'}
+                </p>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="sm:justify-center">
+          <DialogFooter className="sm:justify-center pt-2">
             <Button
               onClick={handleContinueToDashboard}
-              className="w-full sm:w-auto px-8 py-6 text-base font-semibold bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
+              className="w-full sm:w-auto px-10 py-6 text-base font-semibold bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 shadow-lg text-white"
               size="lg"
             >
               Continue to Dashboard
