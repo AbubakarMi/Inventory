@@ -49,9 +49,15 @@ export type User = {
 };
 
 export type Notification = {
-    id: string;
+    id: number;
+    user_id?: number;
+    title: string;
     message: string;
-    type: 'warning' | 'error' | 'info';
+    type: 'warning' | 'error' | 'info' | 'success';
+    is_read: boolean;
+    related_collection?: string;
+    related_document_id?: number;
+    created_at: string;
 }
 
 export type ChartData = {

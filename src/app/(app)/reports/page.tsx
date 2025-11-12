@@ -504,8 +504,8 @@ export default function ReportsPage() {
                             </div>
                             <div className="p-4 bg-orange-100 dark:bg-orange-900/50 rounded-lg">
                                 <h3 className="text-sm font-medium text-orange-700 dark:text-orange-400">Expiring Soon</h3>
-                                <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{inventoryItems.filter(item => item.expiry && new Date(item.expiry) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length}</p>
-                                <p className="text-xs text-orange-700 dark:text-orange-400 mt-1">within 7 days</p>
+                                <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{inventoryItems.filter(item => item.expiry && new Date(item.expiry) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(item.expiry) >= new Date()).length}</p>
+                                <p className="text-xs text-orange-700 dark:text-orange-400 mt-1">within 30 days</p>
                             </div>
                             <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-lg">
                                 <h3 className="text-sm font-medium text-slate-700 dark:text-slate-400">Expired Items</h3>

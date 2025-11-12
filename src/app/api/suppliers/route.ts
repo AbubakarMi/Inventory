@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { createAdminNotification } from '@/lib/notifications';
 
 // GET - Fetch all suppliers
 export async function GET(request: NextRequest) {
@@ -42,6 +43,15 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       ['create', 'suppliers', result.rows[0].id, user.id, user.name, user.role, `Created supplier: ${name}`]
     );
+
+    // Create notification for admins/managers
+    await createAdminNotification({
+      title: 'New Supplier Added',
+      message: `${user.name} added supplier "${name}"`,
+      type: 'success',
+      relatedCollection: 'suppliers',
+      relatedDocumentId: result.rows[0].id,
+    });
 
     return NextResponse.json({ supplier: result.rows[0], message: 'Supplier created successfully' }, { status: 201 });
   } catch (error: any) {

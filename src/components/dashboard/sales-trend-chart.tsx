@@ -128,15 +128,18 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
               <ChartTooltip
                 cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '5 5' }}
                 content={<ChartTooltipContent
-                  formatter={(value, name) => [
-                    <div key={`tooltip-${name}-${value}`} className="flex flex-col gap-1">
-                      <span className="font-bold text-base">₦{Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {((Number(value) / totalSales) * 100).toFixed(1)}% of total
-                      </span>
-                    </div>,
-                    'Daily Sales'
-                  ]}
+                  formatter={(value, name) => {
+                    if (name === 'average') return null; // Don't show tooltip for average line
+                    return [
+                      <div key={`tooltip-${name}-${value}`} className="flex flex-col gap-1">
+                        <span className="font-bold text-base">₦{Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {((Number(value) / totalSales) * 100).toFixed(1)}% of total
+                        </span>
+                      </div>,
+                      'Daily Sales'
+                    ];
+                  }}
                   labelClassName="font-semibold text-sm"
                 />}
               />
