@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -9,11 +9,9 @@ import * as z from "zod"
 import { motion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/AuthContext"
@@ -28,20 +26,11 @@ export default function LoginPage() {
   const { login, currentUser, loading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
-  const [loginData, setLoginData] = useState<{ name: string; role: string } | null>(null)
-  const shouldBlockRedirect = useRef(false)
 
-  // Redirect if already logged in (but not during login flow)
+  // Redirect if already logged in
   useEffect(() => {
-    console.log('[LOGIN] useEffect check:', {
-      loading,
-      hasUser: !!currentUser,
-      shouldBlock: shouldBlockRedirect.current,
-      showModal: showWelcomeModal
-    })
-    if (!loading && currentUser && !shouldBlockRedirect.current) {
-      console.log('[LOGIN] Redirecting to dashboard (already logged in)')
+    if (!loading && currentUser) {
+      console.log('[LOGIN] User already logged in, redirecting to dashboard')
       router.replace("/dashboard")
     }
   }, [currentUser, loading, router])
@@ -58,30 +47,24 @@ export default function LoginPage() {
     console.log('[LOGIN] Form submitted')
     setIsLoading(true)
     try {
-      // Block automatic redirect during login flow
-      console.log('[LOGIN] Setting shouldBlockRedirect = true')
-      shouldBlockRedirect.current = true
-
       console.log('[LOGIN] Calling login function...')
       const result = await login(values.email, values.password)
       console.log('[LOGIN] Login successful, result:', result)
 
-      // Store login data and show welcome modal
+      // Store welcome data in sessionStorage to show on dashboard
       const userName = result?.user?.name || 'User'
       const userRole = result?.user?.role || ''
 
-      console.log('[LOGIN] Setting login data:', { userName, userRole })
-      setLoginData({ name: userName, role: userRole })
-      setIsLoading(false)
+      sessionStorage.setItem('showWelcome', JSON.stringify({
+        name: userName,
+        role: userRole
+      }))
 
-      // Show modal
-      console.log('[LOGIN] Setting showWelcomeModal = true')
-      setShowWelcomeModal(true)
-      console.log('[LOGIN] Welcome modal should now be visible')
+      console.log('[LOGIN] Redirecting to dashboard...')
+      router.push("/dashboard")
     } catch (error: any) {
       console.error('[LOGIN] Login error:', error)
       setIsLoading(false)
-      shouldBlockRedirect.current = false
 
       // Extract meaningful error message
       let errorMessage = "Invalid credentials. Please try again."
@@ -103,12 +86,6 @@ export default function LoginPage() {
     }
   }
 
-  const handleContinueToDashboard = () => {
-    setShowWelcomeModal(false)
-    shouldBlockRedirect.current = false
-    router.push("/dashboard")
-  }
-
   // Show loading while checking auth
   if (loading) {
     console.log('[LOGIN] Rendering loading state')
@@ -122,16 +99,10 @@ export default function LoginPage() {
     )
   }
 
-  // Don't show login form if already logged in (but show modal if it's open)
-  if (currentUser && !showWelcomeModal) {
-    console.log('[LOGIN] User logged in and modal closed, returning null')
+  // Don't show login form if already logged in
+  if (currentUser) {
     return null
   }
-
-  console.log('[LOGIN] Rendering login form/modal', {
-    hasUser: !!currentUser,
-    showModal: showWelcomeModal
-  })
 
   return (
     <div className="flex min-h-screen">
@@ -147,7 +118,7 @@ export default function LoginPage() {
           >
             <div className="flex flex-col justify-center items-center gap-6 mb-8">
               {/* Logo */}
-              <div className="w-40 h-40 bg-white rounded-2xl p-6 shadow-xl">
+              <div className="w-32 h-32 rounded-full bg-white p-6 shadow-2xl">
                 <div className="relative w-full h-full">
                   <Image
                     src="/albarka-logo.jpg"
@@ -198,7 +169,7 @@ export default function LoginPage() {
               <div className="flex justify-center lg:hidden mb-6">
                 <div className="flex flex-col items-center gap-3">
                   {/* Logo */}
-                  <div className="w-24 h-24 bg-white rounded-xl p-4 shadow-lg">
+                  <div className="w-24 h-24 rounded-full bg-white p-5 shadow-xl">
                     <div className="relative w-full h-full">
                       <Image
                         src="/albarka-logo.jpg"
@@ -300,71 +271,6 @@ export default function LoginPage() {
           </div>
         </motion.div>
       </div>
-
-      {/* Welcome Modal */}
-      <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
-        <DialogContent className="sm:max-w-lg border-2 border-green-200 dark:border-green-800">
-          <DialogHeader className="text-center space-y-6 pt-4">
-            {/* Logo with animation */}
-            <div className="flex justify-center">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-green-200/50 dark:bg-green-600/50 rounded-2xl blur-2xl opacity-50"></div>
-                <div className="relative w-32 h-32 bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-2xl border-2 border-green-200 dark:border-green-700">
-                  <div className="relative w-full h-full">
-                    <Image
-                      src="/albarka-logo.jpg"
-                      alt="Albarka PS Intertrade Logo"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                </div>
-                {/* Success checkmark overlay */}
-                <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-green-600 dark:bg-green-500 rounded-full flex items-center justify-center shadow-lg border-4 border-white dark:border-slate-900">
-                  <CheckCircle2 className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <DialogTitle className="text-3xl md:text-4xl font-bold text-green-900 dark:text-green-100">
-                Welcome back, {loginData?.name}!
-              </DialogTitle>
-              <div className="h-1 w-24 mx-auto bg-green-500 rounded-full"></div>
-            </div>
-
-            <DialogDescription className="text-base text-slate-600 dark:text-slate-400">
-              You have successfully logged in as <span className="font-bold text-green-700 dark:text-green-400">{loginData?.role}</span>
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-4">
-            <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-5 border border-green-200 dark:border-green-800 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-600 dark:bg-green-500 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <p className="text-sm text-slate-700 dark:text-slate-300 pt-1">
-                  {loginData?.role === 'Admin' && 'You have full access to all system features including user management, reports, and system configuration.'}
-                  {loginData?.role === 'Manager' && 'You can manage inventory, sales, reports, and oversee daily operations.'}
-                  {loginData?.role === 'Storekeeper' && 'You can manage inventory items, record sales and usage transactions.'}
-                  {loginData?.role === 'Staff' && 'You can view inventory and record sales transactions.'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="sm:justify-center pt-2">
-            <Button
-              onClick={handleContinueToDashboard}
-              className="w-full sm:w-auto px-10 py-6 text-base font-semibold bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 shadow-lg text-white"
-              size="lg"
-            >
-              Continue to Dashboard
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

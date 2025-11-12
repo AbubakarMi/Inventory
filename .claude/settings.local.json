@@ -31,7 +31,10 @@
       "Bash(git reflog:*)",
       "Bash(git gc:*)",
       "Bash(cp:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(where:*)",
+      "Bash(node generate-favicon.js:*)",
+      "Bash(del generate-favicon.js)"
     ],
     "deny": [],
     "ask": []
