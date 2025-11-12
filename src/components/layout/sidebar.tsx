@@ -2,8 +2,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Tractor,
   LayoutDashboard,
   Package,
   ShoppingCart,
@@ -74,21 +74,25 @@ export default function AppSidebar() {
 
   return (
     <Sidebar className="border-r-0 bg-white dark:bg-slate-950 shadow-[0_0_40px_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_rgba(0,0,0,0.3)]">
-      <SidebarHeader className="border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-7 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+      <SidebarHeader className="border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-7 bg-white dark:bg-slate-950">
         <div className="flex items-center gap-4 w-full">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/60 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg ring-1 ring-primary/20 group-hover:scale-110 transition-transform duration-300">
-                <Tractor className="h-6 w-6 text-primary-foreground" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-full overflow-hidden shadow-lg bg-white p-2 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
+                <Image
+                  src="/albarka-logo.jpg"
+                  alt="Albarka PS Intertrade"
+                  fill
+                  className="object-contain p-1"
+                />
               </div>
               <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-950 animate-pulse shadow-sm"></div>
             </div>
             { (state === 'expanded' || isMobile) && (
               <div className="flex flex-col flex-1">
-                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
-                  APS Intertrade
+                <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">
+                  Albarka PS Intertrade
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold tracking-wide">INVENTORY SYSTEM</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Inventory System</span>
               </div>
             )}
         </div>

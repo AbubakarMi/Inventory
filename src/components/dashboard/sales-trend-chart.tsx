@@ -163,15 +163,8 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
                 animationBegin={0}
                 animationDuration={1200}
                 animationEasing="ease-in-out"
-                name="sales"
+                name="salesArea"
                 id="sales-area"
-              />
-              {/* Overlay line with dots for emphasis */}
-              <Line
-                type="monotone"
-                dataKey="sales"
-                stroke="hsl(var(--primary))"
-                strokeWidth={4}
                 dot={(props) => {
                   const { cx, cy, payload, index } = props
                   const isHighest = payload.sales === maxSales
@@ -190,9 +183,6 @@ export function SalesTrendChart({ sales }: SalesTrendChartProps) {
                   )
                 }}
                 activeDot={{ r: 9, strokeWidth: 3 }}
-                name="sales"
-                id="sales-line"
-                hide={true}
               />
             </ComposedChart>
           </ResponsiveContainer>

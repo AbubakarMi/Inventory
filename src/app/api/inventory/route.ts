@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, category, quantity, unit, cost, price, expiry, supplier, threshold } = body;
+    const { name, category, quantity, unit, cost, price, expiry, supplier, threshold, grade } = body;
 
     if (!name || !unit) {
       return NextResponse.json({ error: 'Name and unit are required' }, { status: 400 });
@@ -110,10 +110,10 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query(
-      `INSERT INTO inventory (name, category_id, quantity, unit, status, cost, price, expiry, supplier_id, threshold, created_by, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `INSERT INTO inventory (name, category_id, quantity, unit, status, cost, price, expiry, supplier_id, threshold, grade, created_by, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
-      [name, category_id, qty, unit, status, cost || 0, price || 0, expiry || null, supplier_id, thresh, user.id, user.id]
+      [name, category_id, qty, unit, status, cost || 0, price || 0, expiry || null, supplier_id, thresh, grade || 'A', user.id, user.id]
     );
 
     await query(
@@ -138,10 +138,31 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, ...updateData } = body;
+    console.log('[PUT /inventory] Request body:', JSON.stringify(body, null, 2));
+    const { id, category, supplier, ...updateData } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    }
+
+    // Convert category and supplier names to IDs
+    if (category) {
+      const catResult = await query('SELECT id FROM categories WHERE name = $1', [category]);
+      if (catResult.rows.length > 0) {
+        updateData.category_id = catResult.rows[0].id;
+      }
+    }
+
+    if (supplier) {
+      const suppResult = await query('SELECT id FROM suppliers WHERE name = $1', [supplier]);
+      if (suppResult.rows.length > 0) {
+        updateData.supplier_id = suppResult.rows[0].id;
+      }
+    }
+
+    // Handle empty expiry dates - convert empty string to null
+    if ('expiry' in updateData && updateData.expiry === '') {
+      updateData.expiry = null;
     }
 
     // If quantity or threshold is being updated, recalculate status
@@ -162,18 +183,21 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const fields = Object.keys(updateData).filter(key => updateData[key] !== undefined);
+    const fields = Object.keys(updateData).filter(key => updateData[key] !== undefined && key !== 'id');
     if (fields.length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
+    // Build the SET clause dynamically
     const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
     const values = [id, ...fields.map(field => updateData[field]), user.id];
 
-    const result = await query(
-      `UPDATE inventory SET ${setClause}, updated_by = $${values.length}, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`,
-      values
-    );
+    const sql = `UPDATE inventory SET ${setClause}, updated_by = $${values.length}, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`;
+
+    console.log('[PUT /inventory] SQL Query:', sql);
+    console.log('[PUT /inventory] Values:', values);
+
+    const result = await query(sql, values);
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
@@ -187,8 +211,13 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ item: result.rows[0], message: 'Item updated successfully' }, { status: 200 });
   } catch (error: any) {
-    console.error('Error updating inventory item:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[PUT /inventory] Error updating inventory item:', error);
+    console.error('[PUT /inventory] Error details:', error.message, error.code);
+    return NextResponse.json({
+      error: 'Internal server error',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+    }, { status: 500 });
   }
 }
 

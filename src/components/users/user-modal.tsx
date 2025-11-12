@@ -103,6 +103,7 @@ export function UserModal({ children, userToEdit, onSuccess }: UserModalProps) {
                 // Update existing user
                 await updateUser(userToEdit.id, {
                     name: values.name,
+                    email: values.email,
                     role: values.role
                 });
                 toast({
@@ -174,7 +175,7 @@ export function UserModal({ children, userToEdit, onSuccess }: UserModalProps) {
                         <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                                <Input type="email" {...field} disabled={isSubmitting || !!userToEdit} />
+                                <Input type="email" {...field} disabled={isSubmitting} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -186,7 +187,7 @@ export function UserModal({ children, userToEdit, onSuccess }: UserModalProps) {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Role</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting || (userToEdit?.role === 'Admin')}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a role" />
@@ -199,6 +200,9 @@ export function UserModal({ children, userToEdit, onSuccess }: UserModalProps) {
                                     <SelectItem value="Storekeeper">Storekeeper</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {userToEdit?.role === 'Admin' && (
+                                <p className="text-xs text-muted-foreground mt-1">Admin role cannot be changed</p>
+                            )}
                             <FormMessage />
                         </FormItem>
                     )}

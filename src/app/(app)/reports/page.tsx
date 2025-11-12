@@ -60,12 +60,17 @@ export default function ReportsPage() {
         fetchData();
     }, []);
 
-    const { totalRevenue, costOfGoodsSold, netProfit, salesChartData } = useMemo(() => {
+    const { totalRevenue, costOfGoodsSold, netProfit, totalStockValue, totalItems, lowStockCount, outOfStockCount, averageItemValue, salesChartData } = useMemo(() => {
         if (!sales || !inventoryItems) {
             return {
                 totalRevenue: 0,
                 costOfGoodsSold: 0,
                 netProfit: 0,
+                totalStockValue: 0,
+                totalItems: 0,
+                lowStockCount: 0,
+                outOfStockCount: 0,
+                averageItemValue: 0,
                 salesChartData: []
             };
         }
@@ -83,6 +88,27 @@ export default function ReportsPage() {
 
         const netProfit = totalRevenue - costOfGoodsSold;
 
+        // Calculate total stock value
+        const totalStockValue = inventoryItems.reduce((sum, item) => {
+            return sum + (Number(item.cost) * Number(item.quantity));
+        }, 0);
+
+        // Calculate total items in stock
+        const totalItems = inventoryItems.reduce((sum, item) => sum + Number(item.quantity), 0);
+
+        // Count low stock items
+        const lowStockCount = inventoryItems.filter(item => {
+            const quantity = Number(item.quantity) || 0;
+            const threshold = Number(item.threshold) || 0;
+            return quantity > 0 && quantity <= threshold;
+        }).length;
+
+        // Count out of stock items
+        const outOfStockCount = inventoryItems.filter(item => Number(item.quantity) === 0).length;
+
+        // Calculate average item value
+        const averageItemValue = inventoryItems.length > 0 ? totalStockValue / inventoryItems.length : 0;
+
         // Group sales by date for the chart
         const dailyTrends: { [date: string]: number } = {};
         sales.forEach(sale => {
@@ -98,7 +124,7 @@ export default function ReportsPage() {
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 
-        return { totalRevenue, costOfGoodsSold, netProfit, salesChartData };
+        return { totalRevenue, costOfGoodsSold, netProfit, totalStockValue, totalItems, lowStockCount, outOfStockCount, averageItemValue, salesChartData };
 
     }, [sales, inventoryItems]);
 
@@ -114,11 +140,22 @@ export default function ReportsPage() {
 
         let yPos = 20;
 
+        // Add logo
+        const logoImg = new Image();
+        logoImg.src = '/albarka-logo.jpg';
+        doc.addImage(logoImg, 'JPEG', 14, yPos - 5, 20, 20);
+
         // Header - Company Name
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(primaryGreen[0], primaryGreen[1], primaryGreen[2]);
-        doc.text('APS INTERTRADE INVENTORY SYSTEM', 14, yPos);
+        doc.text('ALBARKA PS INTERTRADE', 40, yPos + 5);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Inventory Management System', 40, yPos + 11);
+
+        yPos += 15;
 
         // Report Title and Date
         yPos += 10;
@@ -163,6 +200,40 @@ export default function ReportsPage() {
         doc.setTextColor(profitColor[0], profitColor[1], profitColor[2]);
         doc.text('Net Profit:', 14, yPos);
         doc.text(`₦${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+
+        // Inventory Overview
+        yPos += 15;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
+        doc.text('Inventory Overview', 14, yPos);
+
+        yPos += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+
+        doc.text('Total Stock Value:', 14, yPos);
+        doc.text(`₦${totalStockValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+
+        yPos += 7;
+        doc.text('Total Items:', 14, yPos);
+        doc.text(`${totalItems.toLocaleString('en-US')} (${inventoryItems.length} unique)`, 80, yPos);
+
+        yPos += 7;
+        doc.text('Low Stock Items:', 14, yPos);
+        doc.text(`${lowStockCount}`, 80, yPos);
+
+        yPos += 7;
+        doc.text('Out of Stock Items:', 14, yPos);
+        doc.text(`${outOfStockCount}`, 80, yPos);
+
+        yPos += 7;
+        doc.text('Average Item Value:', 14, yPos);
+        doc.text(`₦${averageItemValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 80, yPos);
+
+        yPos += 7;
+        doc.text('Profit Margin:', 14, yPos);
+        doc.text(`${totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : '0.00'}%`, 80, yPos);
 
         // Inventory Table
         yPos += 12;
@@ -252,6 +323,16 @@ export default function ReportsPage() {
             ['Total Revenue', totalRevenue],
             ['Cost of Goods Sold', costOfGoodsSold],
             ['Net Profit', netProfit],
+            [],
+            ['Inventory Overview'],
+            [],
+            ['Total Stock Value', totalStockValue],
+            ['Total Items', totalItems],
+            ['Unique Items', inventoryItems.length],
+            ['Low Stock Items', lowStockCount],
+            ['Out of Stock Items', outOfStockCount],
+            ['Average Item Value', averageItemValue],
+            ['Profit Margin (%)', totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : '0.00'],
         ];
         const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
         XLSX.utils.book_append_sheet(wb, summaryWs, 'Financial Summary');
@@ -372,6 +453,44 @@ export default function ReportsPage() {
                         <div className={`p-4 rounded-lg ${netProfit >= 0 ? 'bg-green-100 dark:bg-green-900/50' : 'bg-red-100 dark:bg-red-900/50'}`}>
                             <h3 className={`text-sm font-medium ${netProfit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>Net Profit</h3>
                             <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>₦{netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Inventory Overview</CardTitle>
+                        <CardDescription>Comprehensive inventory statistics and metrics.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-4">
+                        <div className="p-4 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                            <h3 className="text-sm font-medium text-blue-700 dark:text-blue-400">Total Stock Value</h3>
+                            <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">₦{totalStockValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                        <div className="p-4 bg-muted rounded-lg">
+                            <h3 className="text-sm font-medium text-muted-foreground">Total Items</h3>
+                            <p className="text-2xl font-bold">{totalItems.toLocaleString('en-US')}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{inventoryItems.length} unique items</p>
+                        </div>
+                        <div className="p-4 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                            <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Low Stock</h3>
+                            <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{lowStockCount}</p>
+                            <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">items need reorder</p>
+                        </div>
+                        <div className="p-4 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                            <h3 className="text-sm font-medium text-red-700 dark:text-red-400">Out of Stock</h3>
+                            <p className="text-2xl font-bold text-red-700 dark:text-red-400">{outOfStockCount}</p>
+                            <p className="text-xs text-red-700 dark:text-red-400 mt-1">items unavailable</p>
+                        </div>
+                        <div className="p-4 bg-purple-100 dark:bg-purple-900/50 rounded-lg md:col-span-2">
+                            <h3 className="text-sm font-medium text-purple-700 dark:text-purple-400">Average Item Value</h3>
+                            <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">₦{averageItemValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                        <div className="p-4 bg-green-100 dark:bg-green-900/50 rounded-lg md:col-span-2">
+                            <h3 className="text-sm font-medium text-green-700 dark:text-green-400">Profit Margin</h3>
+                            <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+                                {totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : '0.00'}%
+                            </p>
                         </div>
                     </CardContent>
                 </Card>

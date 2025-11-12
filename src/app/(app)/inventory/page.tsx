@@ -60,9 +60,31 @@ export default function InventoryPage() {
       .filter(item =>
         selectedCategory === 'All' || item.category === selectedCategory
       )
-      .filter(item =>
-        selectedStatus === 'All' || item.status === selectedStatus
-      )
+      .filter(item => {
+        // Handle stock status filters
+        if (selectedStatus === 'All') return true;
+        if (selectedStatus === 'In Stock' || selectedStatus === 'Low Stock' || selectedStatus === 'Out of Stock') {
+          return item.status === selectedStatus;
+        }
+
+        // Handle expiry status filters
+        if (!item.expiry) return false;
+
+        const expiryDate = new Date(item.expiry);
+        const today = new Date();
+        expiryDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        const daysUntilExpiry = Math.floor((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (selectedStatus === 'Expired') {
+          return daysUntilExpiry < 0;
+        } else if (selectedStatus === 'Expiring Soon') {
+          return daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
+        }
+
+        return true;
+      })
       .filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -134,6 +156,8 @@ export default function InventoryPage() {
               <SelectItem value="In Stock">In Stock</SelectItem>
               <SelectItem value="Low Stock">Low Stock</SelectItem>
               <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+              <SelectItem value="Expiring Soon">Expiring Soon</SelectItem>
+              <SelectItem value="Expired">Expired</SelectItem>
             </SelectContent>
           </Select>
         </div>
