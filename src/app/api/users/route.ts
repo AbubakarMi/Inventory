@@ -91,12 +91,24 @@ export async function PUT(request: NextRequest) {
     }
 
     if (email) {
+      // Check if email already exists (excluding current user)
+      const existingUser = await query('SELECT id FROM users WHERE email = $1 AND id != $2', [email.toLowerCase(), id]);
+      if (existingUser.rows.length > 0) {
+        return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
+      }
+
       paramCount++;
       updates.push(`email = $${paramCount}`);
       params.push(email.toLowerCase());
     }
 
     if (role && currentUser.role === 'Admin') {
+      // Check if trying to change an Admin user's role
+      const targetUser = await query('SELECT role FROM users WHERE id = $1', [id]);
+      if (targetUser.rows.length > 0 && targetUser.rows[0].role === 'Admin') {
+        return NextResponse.json({ error: 'Cannot change Admin user role' }, { status: 403 });
+      }
+
       paramCount++;
       updates.push(`role = $${paramCount}`);
       params.push(role);
